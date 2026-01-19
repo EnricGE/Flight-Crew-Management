@@ -24,7 +24,7 @@ def compute_eligibility(
             ok = (
                 c.role in d.coverage
                 and c.base == d.base
-                and c.qualified_types in c.qualified_types
+                and d.aircraft_type in c.qualified_types
             )
             eligible[(c.crew_id, d.duty_id)] = ok #T/F
 
