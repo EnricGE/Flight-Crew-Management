@@ -31,8 +31,12 @@ def main() -> None:
     eligible = compute_eligibility(crew, duties)
     conflicts = compute_conflict_pairs(duties, scenario.min_rest_minutes)
 
-    rm = build_rostering_model(crew, duties, eligible, conflicts)
-
+    rm = build_rostering_model(
+        crew, duties, eligible, conflicts,
+        horizon_days=scenario.horizon_days,
+        max_consecutive_work_days=scenario.max_consecutive_work_days,
+        )
+    
     solver = cp_model.CpSolver()
     solver.parameters.max_time_in_seconds = args.time_limit
     solver.parameters.num_search_workers = 4
@@ -48,6 +52,11 @@ def main() -> None:
     print("  max_load:", solver.Value(rm.max_load))
     print("  min_load:", solver.Value(rm.min_load))
     print("  spread  :", solver.Value(rm.max_load) - solver.Value(rm.min_load))
+
+    print("\nWork pattern (1=works):")
+    for c in crew:
+        pattern = [solver.Value(rm.work[(c.crew_id, day)]) for day in range(1, scenario.horizon_days + 1)]
+        print(f"  {c.crew_id}: {pattern}")
 
     print("\nCrew workloads:")
     for c in crew:

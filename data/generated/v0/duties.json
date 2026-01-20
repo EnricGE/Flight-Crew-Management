@@ -2,7 +2,7 @@
   "duties": [
     {"duty_id": "D1", "day": 1, "start_min": 480, "end_min": 720, "base": "CDG", "aircraft_type": "A320", "coverage": {"CAPT": 1, "FO": 1}},
     {"duty_id": "D2", "day": 1, "start_min": 660, "end_min": 900, "base": "CDG", "aircraft_type": "A320", "coverage": {"CAPT": 1, "FO": 1}},
-    {"duty_id": "D3", "day": 2, "start_min": 480, "end_min": 720, "base": "CDG", "aircraft_type": "A320", "coverage": {"CAPT": 1, "FO": 1}},
+    {"duty_id": "D3", "day": 3, "start_min": 480, "end_min": 720, "base": "CDG", "aircraft_type": "A320", "coverage": {"CAPT": 1, "FO": 1}},
     {"duty_id": "D4", "day": 2, "start_min": 780, "end_min": 1020,"base": "CDG", "aircraft_type": "A320", "coverage": {"CAPT": 1, "FO": 1}}
   ]
 }

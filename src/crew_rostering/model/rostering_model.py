@@ -14,6 +14,7 @@ class RosteringModel:
     model: cp_model.CpModel
     x: Dict[Tuple[str, str], cp_model.IntVar]  # (crew_id, duty_id) -> var
     total_minutes: Dict[str, cp_model.IntVar]
+    work: Dict[Tuple[str, int], cp_model.IntVar] # (crew_id, day) -> BoolVar
     max_load: cp_model.IntVar
     min_load: cp_model.IntVar
 
@@ -23,6 +24,8 @@ def build_rostering_model(
         duties: List[Duty],
         eligible: Dict[Tuple[str, str], bool],
         conflicts: List[Tuple[str, str]],
+        horizon_days: int,
+        max_consecutive_work_days:int,
 ) -> RosteringModel:
     """
     Build a rostering CP-SAT model.
@@ -100,6 +103,44 @@ def build_rostering_model(
     model.AddMaxEquality(max_load, total_vars_list)
     model.AddMinEquality(min_load, total_vars_list)
 
+    # --- Workday indicator variables ---
+    work: Dict[Tuple[str, int], cp_model.IntVar] = {}
+
+    # Pre-group duties by day for fast linking
+    duties_by_day: Dict[int, List[str]] = {day: [] for day in range(1, horizon_days + 1)}
+    for d in duties:
+        duties_by_day[d.day].append(d.duty_id)
+
+    for c_id in crew_ids:
+        for day in range(1, horizon_days + 1):
+            w = model.NewBoolVar(f"work[{c_id},{day}]")
+            work[(c_id, day)] = w
+
+            # If any assignment that day => work=1
+            day_vars = []
+            for d_id in duties_by_day[day]:
+                var = x.get((c_id, d_id))
+                if var is not None:
+                    day_vars.append(var)
+
+            if day_vars:
+                # w >= each assignment var
+                for v in day_vars:
+                    model.Add(w >= v)
+                # w <= sum(assignments)  (so w can't be 1 if no assignment)
+                model.Add(w <= sum(day_vars))
+            else:
+                # no eligible duties on that day for that crew
+                model.Add(w == 0)
+
+    # --- Max consecutive work days (hard constraint) ---
+    K = max_consecutive_work_days
+    if K < horizon_days:
+        for c_id in crew_ids:
+            for start_day in range(1, horizon_days - K + 1):
+                window = [work[(c_id, d)] for d in range(start_day, start_day + K + 1)]
+                model.Add(sum(window) <= K)
+
     # --- Objective: minimize spread ---
     model.Minimize(max_load - min_load)
 
@@ -107,6 +148,7 @@ def build_rostering_model(
         model=model,
         x=x,
         total_minutes=total_minutes,
+        work=work,
         max_load=max_load,
         min_load=min_load,
     )
