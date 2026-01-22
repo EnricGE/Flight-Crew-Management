@@ -26,6 +26,7 @@ def build_rostering_model(
         conflicts: List[Tuple[str, str]],
         horizon_days: int,
         max_consecutive_work_days:int,
+        weights: Dict[str, int],
 ) -> RosteringModel:
     """
     Build a rostering CP-SAT model.
@@ -141,8 +142,17 @@ def build_rostering_model(
                 window = [work[(c_id, d)] for d in range(start_day, start_day + K + 1)]
                 model.Add(sum(window) <= K)
 
-    # --- Objective: minimize spread ---
-    model.Minimize(max_load - min_load)
+    # --- Objective: minimize spread and worked days, maximise fairness ---
+    fairness_w = int(weights.get("fairness_spread", 100))
+    worked_days_w = int(weights.get("worked_days", 1))
+
+    spread = model.NewIntVar(0, max_cap, "spread")
+    model.Add(spread == max_load - min_load)
+
+    worked_days = model.NewIntVar(0, len(crew_ids) * horizon_days, "worked_days")
+    model.Add(worked_days == sum(work.values()))
+
+    model.Minimize(fairness_w * spread + worked_days_w * worked_days)
 
     return RosteringModel(
         model=model,

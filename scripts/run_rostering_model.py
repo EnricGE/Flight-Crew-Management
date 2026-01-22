@@ -13,7 +13,7 @@ from crew_rostering.preprocessing.duty_conflicts import compute_conflict_pairs
 from crew_rostering.model.rostering_model import build_rostering_model
 
 
-DEFAULT_INSTANCE_DIR = Path("data/generated/v0")
+DEFAULT_INSTANCE_DIR = Path("data/generated/v1")
 
 
 def main() -> None:
@@ -35,6 +35,7 @@ def main() -> None:
         crew, duties, eligible, conflicts,
         horizon_days=scenario.horizon_days,
         max_consecutive_work_days=scenario.max_consecutive_work_days,
+        weights=scenario.weights,
         )
     
     solver = cp_model.CpSolver()
@@ -47,6 +48,11 @@ def main() -> None:
     if status not in (cp_model.OPTIMAL, cp_model.FEASIBLE):
         print("No feasible roster found.")
         return
+    
+    print("\nKPIs:")
+    print("  objective:", solver.ObjectiveValue())
+    print("  spread:", solver.Value(rm.max_load) - solver.Value(rm.min_load))
+    print("  worked_days:", sum(solver.Value(rm.work[(c.crew_id, day)]) for c in crew for day in range(1, scenario.horizon_days + 1)))
     
     print("\nFairness:")
     print("  max_load:", solver.Value(rm.max_load))

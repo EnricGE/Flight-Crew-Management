@@ -1,0 +1,8 @@
+{
+  "crew": [
+    {"crew_id": "C1", "role": "CAPT", "base": "CDG", "qualified_types": ["A320"], "max_minutes": 2400},
+    {"crew_id": "C2", "role": "CAPT", "base": "CDG", "qualified_types": ["A320"], "max_minutes": 2400},
+    {"crew_id": "F1", "role": "FO",   "base": "CDG", "qualified_types": ["A320"], "max_minutes": 2400},
+    {"crew_id": "F2", "role": "FO",   "base": "CDG", "qualified_types": ["A320"], "max_minutes": 2400}
+  ]
+}
