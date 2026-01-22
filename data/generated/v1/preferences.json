@@ -1,0 +1,8 @@
+{
+  "off_requests": [
+    {"crew_id": "C1", "day": 2, "penalty": 50},
+    {"crew_id": "C2", "day": 2, "penalty": 50},
+    {"crew_id": "F1", "day": 1, "penalty": 50},
+    {"crew_id": "F2", "day": 2, "penalty": 50}
+  ]
+}

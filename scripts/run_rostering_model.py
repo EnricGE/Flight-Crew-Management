@@ -7,7 +7,7 @@ from typing import Dict, List
 
 from ortools.sat.python import cp_model
 
-from crew_rostering.preprocessing.loaders import load_crew, load_duties, load_scenario
+from crew_rostering.preprocessing.loaders import load_crew, load_duties, load_scenario, load_preferences
 from crew_rostering.preprocessing.eligibility import compute_eligibility
 from crew_rostering.preprocessing.duty_conflicts import compute_conflict_pairs
 from crew_rostering.model.rostering_model import build_rostering_model
@@ -27,6 +27,7 @@ def main() -> None:
     scenario = load_scenario(inst / "scenario.json")
     crew = load_crew(inst / "crew.json")
     duties = load_duties(inst / "duties.json")
+    prefs = load_preferences(inst / "preferences.json")
 
     eligible = compute_eligibility(crew, duties)
     conflicts = compute_conflict_pairs(duties, scenario.min_rest_minutes)
@@ -36,6 +37,7 @@ def main() -> None:
         horizon_days=scenario.horizon_days,
         max_consecutive_work_days=scenario.max_consecutive_work_days,
         weights=scenario.weights,
+        off_requests=prefs,
         )
     
     solver = cp_model.CpSolver()
@@ -53,7 +55,8 @@ def main() -> None:
     print("  objective:", solver.ObjectiveValue())
     print("  spread:", solver.Value(rm.max_load) - solver.Value(rm.min_load))
     print("  worked_days:", sum(solver.Value(rm.work[(c.crew_id, day)]) for c in crew for day in range(1, scenario.horizon_days + 1)))
-    
+    print("  preference_cost:", solver.Value(rm.preference_cost))
+
     print("\nFairness:")
     print("  max_load:", solver.Value(rm.max_load))
     print("  min_load:", solver.Value(rm.min_load))

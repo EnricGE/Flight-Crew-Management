@@ -7,6 +7,8 @@ from typing import List, Dict, Any
 
 from crew_rostering.domain.crew import CrewMember
 from crew_rostering.domain.duty import Duty
+from crew_rostering.domain.preferences import OffRequest
+
 
 
 @dataclass(frozen=True)
@@ -64,5 +66,20 @@ def load_scenario(path: Path) -> Scenario:
         max_consecutive_work_days=int(obj["max_consecutive_work_days"]),
         weights=dict(obj.get("weights", {})),
     )
+
+def load_preferences(path:Path) -> List[OffRequest]:
+    if not path.exists():
+        return []  # preferences are optional
+
+    obj = _read_json(path)
+    reqs = obj.get("off_requests", [])
+    return [
+        OffRequest(
+            crew_id = r["crew_id"],
+            day = int(r["day"]),
+            penalty = int(r["penalty"]),
+        )
+        for r in reqs
+    ]
         
     

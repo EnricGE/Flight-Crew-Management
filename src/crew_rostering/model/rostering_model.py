@@ -7,6 +7,7 @@ from ortools.sat.python import cp_model
 
 from crew_rostering.domain.crew import CrewMember
 from crew_rostering.domain.duty import Duty
+from crew_rostering.domain.preferences import OffRequest
 
 
 @dataclass(frozen=True)
@@ -17,6 +18,8 @@ class RosteringModel:
     work: Dict[Tuple[str, int], cp_model.IntVar] # (crew_id, day) -> BoolVar
     max_load: cp_model.IntVar
     min_load: cp_model.IntVar
+    worked_days: cp_model.IntVar
+    preference_cost: cp_model.IntVar
 
 
 def build_rostering_model(
@@ -27,6 +30,7 @@ def build_rostering_model(
         horizon_days: int,
         max_consecutive_work_days:int,
         weights: Dict[str, int],
+        off_requests: List[OffRequest],
 ) -> RosteringModel:
     """
     Build a rostering CP-SAT model.
@@ -145,14 +149,27 @@ def build_rostering_model(
     # --- Objective: minimize spread and worked days, maximise fairness ---
     fairness_w = int(weights.get("fairness_spread", 100))
     worked_days_w = int(weights.get("worked_days", 1))
+    pref_w = int(weights.get("off_request", 1))
 
+    # --- KPI vars ---
+    max_cap = max(c.max_minutes for c in crew) if crew else 0
     spread = model.NewIntVar(0, max_cap, "spread")
     model.Add(spread == max_load - min_load)
 
     worked_days = model.NewIntVar(0, len(crew_ids) * horizon_days, "worked_days")
     model.Add(worked_days == sum(work.values()))
 
-    model.Minimize(fairness_w * spread + worked_days_w * worked_days)
+    # Preference cost: sum penalty * work[c,day] for OFF requests
+    pref_terms = []
+    for r in off_requests:
+        w = work.get((r.crew_id, r.day))
+        if w is not None:
+            pref_terms.append(r.penalty * w)
+
+    preference_cost = model.NewIntVar(0, sum(r.penalty for r in off_requests), "preference_cost")
+    model.Add(preference_cost == sum(pref_terms) if pref_terms else 0)
+
+    model.Minimize(fairness_w * spread + worked_days_w * worked_days + pref_w * preference_cost)
 
     return RosteringModel(
         model=model,
@@ -161,5 +178,7 @@ def build_rostering_model(
         work=work,
         max_load=max_load,
         min_load=min_load,
+        worked_days=worked_days,
+        preference_cost=preference_cost,
     )
 
