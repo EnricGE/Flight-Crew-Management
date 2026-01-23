@@ -1,0 +1,12 @@
+{
+  "horizon_days": 7,
+  "min_rest_minutes": 60,
+  "max_consecutive_work_days": 5,
+  "min_rest_days_per_week": 2,
+  "weights": {
+    "fairness_spread": 10,
+    "worked_days": 1,
+    "off_request": 2,
+    "weekly_rest_shortfall": 20
+  }
+}

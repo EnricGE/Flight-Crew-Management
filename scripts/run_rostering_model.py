@@ -15,7 +15,7 @@ from crew_rostering.model.rostering_model import build_rostering_model
 from crew_rostering.visualization.report import build_report_frames, save_plots, save_tables
 
 
-DEFAULT_INSTANCE_DIR = Path("data/generated/v1")
+DEFAULT_INSTANCE_DIR = Path("data/generated/v2")
 
 
 def main() -> None:
