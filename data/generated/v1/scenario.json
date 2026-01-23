@@ -6,6 +6,7 @@
   "weights": { 
     "fairness_spread": 1, 
     "worked_days": 1, 
-    "off_request": 10 
+    "off_request": 10,
+    "weekly_rest_shortfall": 20
     }
 }

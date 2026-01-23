@@ -57,6 +57,7 @@ def main() -> None:
     print("  spread:", solver.Value(rm.max_load) - solver.Value(rm.min_load))
     print("  worked_days:", sum(solver.Value(rm.work[(c.crew_id, day)]) for c in crew for day in range(1, scenario.horizon_days + 1)))
     print("  preference_cost:", solver.Value(rm.preference_cost))
+    print("  weekly_rest_shortfall:", solver.Value(rm.weekly_rest_shortfall_total)) # Extra worked days
 
     print("\nFairness:")
     print("  max_load:", solver.Value(rm.max_load))

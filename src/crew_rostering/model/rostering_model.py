@@ -20,6 +20,7 @@ class RosteringModel:
     min_load: cp_model.IntVar
     worked_days: cp_model.IntVar
     preference_cost: cp_model.IntVar
+    weekly_rest_shortfall_total: cp_model.IntVar
 
 
 def build_rostering_model(
@@ -147,9 +148,12 @@ def build_rostering_model(
                 window = [work[(c_id, d)] for d in range(start_day, start_day + K + 1)]
                 model.Add(sum(window) <= K)
 
-    # --- Weekly minimum rest days (hard constraint) ---
+    # --- Soft weekly minimum rest days: penalty per missing rest day ---
+    # shortfall represents HOW MANY rest days are missing.
     WEEK_LEN = 7
-    R = int(min_rest_days_per_week)
+    R = int(min_rest_days_per_week) # required rest days per week
+
+    weekly_rest_shortfall_vars = []  # collect IntVars to sum in objective
 
     if R > 0:
         num_weeks = (horizon_days + WEEK_LEN - 1) // WEEK_LEN  # ceil
@@ -160,14 +164,39 @@ def build_rostering_model(
                 days_in_week = end - start + 1
 
                 worked_in_week = [work[(c_id, day)] for day in range(start, end + 1)]
-                # worked_days <= days_in_week - rest_min
-                model.Add(sum(worked_in_week) <= days_in_week - R)
 
-    # --- Objective: minimize spread and worked days, maximise fairness ---
+                worked_days = model.NewIntVar(0, days_in_week, f"worked_days[{c_id},w{w}]")
+                model.Add(worked_days == sum(worked_in_week))
+
+                rest_days = model.NewIntVar(0, days_in_week, f"rest_days[{c_id},w{w}]")
+                model.Add(rest_days == days_in_week - worked_days)
+
+                # shortfall = max(0, R - rest_days)
+                raw = model.NewIntVar(-days_in_week, R, f"raw_shortfall[{c_id},w{w}]")
+                model.Add(raw == R - rest_days)
+
+                shortfall = model.NewIntVar(0, R, f"weekly_rest_shortfall[{c_id},w{w}]")
+                model.AddMaxEquality(shortfall, [raw, 0])
+
+                weekly_rest_shortfall_vars.append(shortfall)
+
+    # --- Objective: ---
     fairness_w = int(weights.get("fairness_spread", 100))
     worked_days_w = int(weights.get("worked_days", 1))
     pref_w = int(weights.get("off_request", 1))
+    weekly_rest_w = int(weights.get("weekly_rest_shortfall", 0))
 
+    weekly_rest_shortfall = model.NewIntVar(
+        0,
+        R * len(crew_ids) * ((horizon_days + 6) // 7),
+        "weekly_rest_shortfall_total",
+    )
+
+    model.Add(
+        weekly_rest_shortfall
+        == (sum(weekly_rest_shortfall_vars) if weekly_rest_shortfall_vars else 0)
+    )
+    
     # --- KPI vars ---
     max_cap = max(c.max_minutes for c in crew) if crew else 0
     spread = model.NewIntVar(0, max_cap, "spread")
@@ -186,7 +215,12 @@ def build_rostering_model(
     preference_cost = model.NewIntVar(0, sum(r.penalty for r in off_requests), "preference_cost")
     model.Add(preference_cost == sum(pref_terms) if pref_terms else 0)
 
-    model.Minimize(fairness_w * spread + worked_days_w * worked_days + pref_w * preference_cost)
+    model.Minimize(
+        fairness_w * spread
+        + worked_days_w * worked_days
+        + pref_w * preference_cost
+        + weekly_rest_w * weekly_rest_shortfall
+    )
 
     return RosteringModel(
         model=model,
@@ -197,5 +231,6 @@ def build_rostering_model(
         min_load=min_load,
         worked_days=worked_days,
         preference_cost=preference_cost,
+        weekly_rest_shortfall_total=weekly_rest_shortfall,
     )
 
