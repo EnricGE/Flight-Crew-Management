@@ -16,6 +16,7 @@ class Scenario:
     horizon_days: int
     min_rest_minutes: int
     max_consecutive_work_days: int
+    min_rest_days_per_week: int
     weights: Dict[str, int]
 
 
@@ -64,6 +65,7 @@ def load_scenario(path: Path) -> Scenario:
         horizon_days=int(obj["horizon_days"]),
         min_rest_minutes=int(obj["min_rest_minutes"]),
         max_consecutive_work_days=int(obj["max_consecutive_work_days"]),
+        min_rest_days_per_week=int(obj.get("min_rest_days_per_week", 0)),
         weights=dict(obj.get("weights", {})),
     )
 

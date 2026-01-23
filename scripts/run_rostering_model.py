@@ -36,6 +36,7 @@ def main() -> None:
         crew, duties, eligible, conflicts,
         horizon_days=scenario.horizon_days,
         max_consecutive_work_days=scenario.max_consecutive_work_days,
+        min_rest_days_per_week=scenario.min_rest_days_per_week,
         weights=scenario.weights,
         off_requests=prefs,
         )

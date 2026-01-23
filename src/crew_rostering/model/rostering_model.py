@@ -29,6 +29,7 @@ def build_rostering_model(
         conflicts: List[Tuple[str, str]],
         horizon_days: int,
         max_consecutive_work_days:int,
+        min_rest_days_per_week: int,
         weights: Dict[str, int],
         off_requests: List[OffRequest],
 ) -> RosteringModel:
@@ -145,6 +146,22 @@ def build_rostering_model(
             for start_day in range(1, horizon_days - K + 1):
                 window = [work[(c_id, d)] for d in range(start_day, start_day + K + 1)]
                 model.Add(sum(window) <= K)
+
+    # --- Weekly minimum rest days (hard constraint) ---
+    WEEK_LEN = 7
+    R = int(min_rest_days_per_week)
+
+    if R > 0:
+        num_weeks = (horizon_days + WEEK_LEN - 1) // WEEK_LEN  # ceil
+        for c_id in crew_ids:
+            for w in range(num_weeks):
+                start = w * WEEK_LEN + 1
+                end = min((w + 1) * WEEK_LEN, horizon_days)
+                days_in_week = end - start + 1
+
+                worked_in_week = [work[(c_id, day)] for day in range(start, end + 1)]
+                # worked_days <= days_in_week - rest_min
+                model.Add(sum(worked_in_week) <= days_in_week - R)
 
     # --- Objective: minimize spread and worked days, maximise fairness ---
     fairness_w = int(weights.get("fairness_spread", 100))

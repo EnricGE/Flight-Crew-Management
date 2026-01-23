@@ -2,6 +2,7 @@
   "horizon_days": 2,
   "min_rest_minutes": 30,
   "max_consecutive_work_days": 2,
+  "min_rest_days_per_week": 2,
   "weights": { 
     "fairness_spread": 1, 
     "worked_days": 1, 
