@@ -8,6 +8,7 @@ dependencies = [
     "pandas>=2.3.3",
     "pydantic>=2.12.5",
     "ortools",
+    "matplotlib>=3.10.8",
 ]
 
 [build-system]

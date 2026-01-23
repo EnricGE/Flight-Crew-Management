@@ -6,3 +6,4 @@ Requires-Python: ==3.11.13
 Requires-Dist: pandas>=2.3.3
 Requires-Dist: pydantic>=2.12.5
 Requires-Dist: ortools
+Requires-Dist: matplotlib>=3.10.8

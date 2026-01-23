@@ -1,1 +1,0 @@
-weekly_rest_shortfall_total

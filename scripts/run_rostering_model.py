@@ -12,6 +12,8 @@ from crew_rostering.preprocessing.eligibility import compute_eligibility
 from crew_rostering.preprocessing.duty_conflicts import compute_conflict_pairs
 from crew_rostering.model.rostering_model import build_rostering_model
 
+from crew_rostering.visualization.report import build_report_frames, save_plots, save_tables
+
 
 DEFAULT_INSTANCE_DIR = Path("data/generated/v1")
 
@@ -104,6 +106,25 @@ def main() -> None:
 
     out_path.write_text(json.dumps(payload, indent=2), encoding="utf-8")
     print(f"\nSaved: {out_path}")
+
+    frames = build_report_frames(
+        solver=solver,
+        rm=rm,
+        crew=crew,
+        duties=duties,
+        scenario=scenario,
+        off_requests=prefs,
+    )
+
+    report_dir = Path("outputs/report")
+    save_plots(frames, report_dir)
+    save_tables(frames, report_dir)
+
+    print(f"\nReport saved to: {report_dir}")
+    print("\nTop weekly rest shortfalls:")
+    print(frames.weekly_rest.sort_values("shortfall", ascending=False).head(10).to_string(index=False))
+    print("\nOFF request violations:")
+    print(frames.off_requests[frames.off_requests["worked"] == 1].to_string(index=False))
 
 
 if __name__ == "__main__":
