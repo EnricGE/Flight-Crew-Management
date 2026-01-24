@@ -1,0 +1,21 @@
+{
+  "off_requests": [
+    { "crew_id": "C2", "day": 1, "penalty": 60 },
+    { "crew_id": "C2", "day": 4, "penalty": 30 },
+
+    { "crew_id": "C4", "day": 2, "penalty": 50 },
+    { "crew_id": "C4", "day": 6, "penalty": 40 },
+
+    { "crew_id": "C1", "day": 5, "penalty": 25 },
+    { "crew_id": "C5", "day": 7, "penalty": 55 },
+
+    { "crew_id": "F2", "day": 1, "penalty": 60 },
+    { "crew_id": "F2", "day": 4, "penalty": 30 },
+
+    { "crew_id": "F4", "day": 2, "penalty": 50 },
+    { "crew_id": "F4", "day": 6, "penalty": 40 },
+
+    { "crew_id": "F1", "day": 5, "penalty": 25 },
+    { "crew_id": "F5", "day": 7, "penalty": 55 }
+  ]
+}

@@ -1,0 +1,15 @@
+{
+  "crew": [
+    { "crew_id": "C1", "role": "CAPT", "base": "CDG", "qualified_types": ["A320"], "max_minutes": 1800 },
+    { "crew_id": "C2", "role": "CAPT", "base": "CDG", "qualified_types": ["A320", "A321"], "max_minutes": 1800 },
+    { "crew_id": "C3", "role": "CAPT", "base": "CDG", "qualified_types": ["A321"], "max_minutes": 1800 },
+    { "crew_id": "C4", "role": "CAPT", "base": "ORY", "qualified_types": ["A320"], "max_minutes": 1800 },
+    { "crew_id": "C5", "role": "CAPT", "base": "ORY", "qualified_types": ["A320", "A321"], "max_minutes": 1800 },
+
+    { "crew_id": "F1", "role": "FO", "base": "CDG", "qualified_types": ["A320"], "max_minutes": 1800 },
+    { "crew_id": "F2", "role": "FO", "base": "CDG", "qualified_types": ["A320", "A321"], "max_minutes": 1800 },
+    { "crew_id": "F3", "role": "FO", "base": "CDG", "qualified_types": ["A321"], "max_minutes": 1800 },
+    { "crew_id": "F4", "role": "FO", "base": "ORY", "qualified_types": ["A320"], "max_minutes": 1800 },
+    { "crew_id": "F5", "role": "FO", "base": "ORY", "qualified_types": ["A320", "A321"], "max_minutes": 1800 }
+  ]
+}

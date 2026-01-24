@@ -5,6 +5,8 @@ from pathlib import Path
 from typing import Dict, List, Tuple
 
 import matplotlib.pyplot as plt
+import matplotlib.patches as mpatches
+from matplotlib.colors import ListedColormap
 import pandas as pd
 from ortools.sat.python import cp_model
 
@@ -16,11 +18,17 @@ from crew_rostering.model.rostering_model import RosteringModel
 
 
 WEEK_LEN = 7
-
+cmap = ListedColormap([
+    "#f2f2f2",  # 0 = rest (light grey)
+    "#2ca02c",  # 1 = work (green)
+    "#ff7f0e",  # 2 = off-request violated (orange)
+    "#d62728",  # 3 = weekly rest violated (red)
+])
 
 @dataclass(frozen=True)
 class ReportFrames:
     work_matrix: pd.DataFrame
+    violation_matrix: pd.DataFrame
     workloads: pd.DataFrame
     weekly_rest: pd.DataFrame
     off_requests: pd.DataFrame
@@ -44,6 +52,8 @@ def build_report_frames(
     }
     work_matrix = pd.DataFrame(work_data, index=days).T
     work_matrix.index.name = "crew_id"
+    work_matrix.columns = work_matrix.columns.astype(int)
+
 
     # --- Workloads ---
     workloads = pd.DataFrame(
@@ -102,25 +112,83 @@ def build_report_frames(
         columns=["crew_id", "day", "penalty", "worked", "cost"]
     )
 
+    violation_matrix = build_violation_matrix(
+    work_matrix, weekly_rest, off_df
+)
+
     return ReportFrames(
         work_matrix=work_matrix,
+        violation_matrix=violation_matrix,
         workloads=workloads,
         weekly_rest=weekly_rest,
         off_requests=off_df,
     )
+
+def build_violation_matrix(
+    work_matrix: pd.DataFrame,
+    weekly_rest: pd.DataFrame,
+    off_requests: pd.DataFrame,
+) -> pd.DataFrame:
+    """
+    Returns a matrix with codes:
+    0 = rest
+    1 = work (ok)
+    2 = work + off-request violated
+    3 = work + weekly-rest violated
+    """
+    vm = work_matrix.copy()
+    vm.columns = vm.columns.astype(int)
+
+    # Start: 0 or 1
+    vm[:] = vm.values
+
+    # --- OFF-request violations ---
+    for _, r in off_requests.iterrows():
+        if r["worked"] == 1:
+            vm.loc[r["crew_id"], r["day"]] = 2
+
+    # --- Weekly rest violations ---
+    viol_weeks = weekly_rest[weekly_rest["shortfall"] > 0]
+    for _, r in viol_weeks.iterrows():
+        for day in range(r["start_day"], r["end_day"] + 1):
+            if vm.loc[r["crew_id"], day] >= 1:
+                vm.loc[r["crew_id"], day] = 3
+
+    return vm
 
 
 def save_plots(frames: ReportFrames, out_dir: Path) -> None:
     out_dir.mkdir(parents=True, exist_ok=True)
 
     # 1) Work "heatmap" (crew x day) using default matplotlib colormap
+    legend_patches = [
+        mpatches.Patch(color="white", label="Rest"),
+        mpatches.Patch(color="#2ca02c", label="Work"),
+    ]
     plt.figure()
-    plt.imshow(frames.work_matrix.values, aspect="auto")
-    plt.yticks(range(len(frames.work_matrix.index)), frames.work_matrix.index)
-    plt.xticks(range(len(frames.work_matrix.columns)), frames.work_matrix.columns)
+    plt.imshow(frames.violation_matrix.values, aspect="auto", cmap=cmap, vmin=0, vmax=3)
+    plt.yticks(
+        range(len(frames.violation_matrix.index)),
+        frames.violation_matrix.index,
+    )
+    plt.xticks(
+        range(len(frames.violation_matrix.columns)),
+        frames.violation_matrix.columns,
+    )
     plt.xlabel("Day")
     plt.ylabel("Crew")
-    plt.title("Work calendar (1=works, 0=rest)")
+    legend_patches = [
+        mpatches.Patch(color="#f0f0f0", label="Rest"),
+        mpatches.Patch(color="#2ca02c", label="Work"),
+        mpatches.Patch(color="#ff7f0e", label="OFF request violated"),
+        mpatches.Patch(color="#d62728", label="Weekly rest violated"),
+    ]
+    plt.legend(
+        handles=legend_patches,
+        loc="upper right",
+        bbox_to_anchor=(1.25, 1.0),
+    )
+    plt.title("Work calendar with violations")
     plt.tight_layout()
     plt.savefig(out_dir / "work_calendar.png", dpi=160)
     plt.close()
@@ -139,6 +207,7 @@ def save_plots(frames: ReportFrames, out_dir: Path) -> None:
 def save_tables(frames: ReportFrames, out_dir: Path) -> None:
     out_dir.mkdir(parents=True, exist_ok=True)
     frames.work_matrix.to_csv(out_dir / "work_matrix.csv")
+    frames.violation_matrix.to_csv(out_dir / "violation_matrix.csv")
     frames.workloads.to_csv(out_dir / "workloads.csv", index=False)
     frames.weekly_rest.to_csv(out_dir / "weekly_rest.csv", index=False)
     frames.off_requests.to_csv(out_dir / "off_requests.csv", index=False)
