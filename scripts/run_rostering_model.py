@@ -60,6 +60,11 @@ def main() -> None:
     spread = solver.Value(rm.max_load) - solver.Value(rm.min_load)
     breakdown = objective_breakdown(solver, rm, scenario.weights)
 
+    obj = int(round(solver.ObjectiveValue()))
+    obj_terms = int(breakdown["objective_from_terms"])
+    if obj != obj_terms:
+        print(f"WARNING: objective mismatch: solver={obj} vs terms={obj_terms}")
+
     print("\nKPIs")
     print(f"  objective: {solver.ObjectiveValue():.0f}")
     print(f"  spread: {spread}")
