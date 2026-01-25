@@ -1,0 +1,31 @@
+{
+  "duties": [
+    { "duty_id": "D01", "day": 1, "start_min": 480, "end_min": 630, "base": "CDG", "aircraft_type": "A320", "coverage": { "CAPT": 1, "FO": 1,"FA":3} },
+    { "duty_id": "D02", "day": 1, "start_min": 690, "end_min": 870, "base": "CDG", "aircraft_type": "A321", "coverage": { "CAPT": 1, "FO": 1,"FA":1} },
+    { "duty_id": "D03", "day": 1, "start_min": 990, "end_min": 1230, "base": "ORY", "aircraft_type": "A320", "coverage": { "CAPT": 1, "FO": 1,"FA":3 } },
+
+    { "duty_id": "D04", "day": 2, "start_min": 480, "end_min": 630, "base": "ORY", "aircraft_type": "A320", "coverage": { "CAPT": 1, "FO": 1 } },
+    { "duty_id": "D05", "day": 2, "start_min": 690, "end_min": 870, "base": "CDG", "aircraft_type": "A320", "coverage": { "CAPT": 1, "FO": 1 } },
+    { "duty_id": "D06", "day": 2, "start_min": 990, "end_min": 1230, "base": "CDG", "aircraft_type": "A321", "coverage": { "CAPT": 1, "FO": 1 } },
+
+    { "duty_id": "D07", "day": 3, "start_min": 480, "end_min": 630, "base": "CDG", "aircraft_type": "A321", "coverage": { "CAPT": 1, "FO": 1 } },
+    { "duty_id": "D08", "day": 3, "start_min": 690, "end_min": 870, "base": "ORY", "aircraft_type": "A320", "coverage": { "CAPT": 1, "FO": 1 } },
+    { "duty_id": "D09", "day": 3, "start_min": 990, "end_min": 1230, "base": "CDG", "aircraft_type": "A320", "coverage": { "CAPT": 1, "FO": 1 } },
+
+    { "duty_id": "D10", "day": 4, "start_min": 480, "end_min": 630, "base": "ORY", "aircraft_type": "A321", "coverage": { "CAPT": 1, "FO": 1 } },
+    { "duty_id": "D11", "day": 4, "start_min": 690, "end_min": 870, "base": "CDG", "aircraft_type": "A320", "coverage": { "CAPT": 1, "FO": 1 } },
+    { "duty_id": "D12", "day": 4, "start_min": 990, "end_min": 1230, "base": "ORY", "aircraft_type": "A320", "coverage": { "CAPT": 1, "FO": 1 } },
+
+    { "duty_id": "D13", "day": 5, "start_min": 480, "end_min": 630, "base": "CDG", "aircraft_type": "A320", "coverage": { "CAPT": 1, "FO": 1 } },
+    { "duty_id": "D14", "day": 5, "start_min": 690, "end_min": 870, "base": "CDG", "aircraft_type": "A321", "coverage": { "CAPT": 1, "FO": 1 } },
+    { "duty_id": "D15", "day": 5, "start_min": 990, "end_min": 1230, "base": "CDG", "aircraft_type": "A320", "coverage": { "CAPT": 1, "FO": 1 } },
+
+    { "duty_id": "D16", "day": 6, "start_min": 480, "end_min": 630, "base": "ORY", "aircraft_type": "A320", "coverage": { "CAPT": 1, "FO": 1 } },
+    { "duty_id": "D17", "day": 6, "start_min": 690, "end_min": 870, "base": "ORY", "aircraft_type": "A321", "coverage": { "CAPT": 1, "FO": 1 } },
+    { "duty_id": "D18", "day": 6, "start_min": 990, "end_min": 1230, "base": "CDG", "aircraft_type": "A320", "coverage": { "CAPT": 1, "FO": 1 } },
+
+    { "duty_id": "D19", "day": 7, "start_min": 480, "end_min": 630, "base": "CDG", "aircraft_type": "A321", "coverage": { "CAPT": 1, "FO": 1 } },
+    { "duty_id": "D20", "day": 7, "start_min": 690, "end_min": 870, "base": "ORY", "aircraft_type": "A320", "coverage": { "CAPT": 1, "FO": 1 } },
+    { "duty_id": "D21", "day": 7, "start_min": 990, "end_min": 1230, "base": "ORY", "aircraft_type": "A321", "coverage": { "CAPT": 1, "FO": 1 } }
+  ]
+}

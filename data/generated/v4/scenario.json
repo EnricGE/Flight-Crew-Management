@@ -1,0 +1,15 @@
+{
+  "horizon_days": 7,
+  "min_rest_minutes": 180,
+  "max_consecutive_work_days": 5,
+  "min_rest_days_per_week": 3,
+  "late_end_threshold_min": 1080,
+  "early_start_threshold_min": 540,
+  "weights": {
+    "fairness_spread": 10,
+    "worked_days": 10,
+    "off_request": 1,
+    "weekly_rest_shortfall": 4,
+    "late_to_early": 25
+  }
+}
