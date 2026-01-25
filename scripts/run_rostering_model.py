@@ -11,11 +11,12 @@ from ortools.sat.python import cp_model
 from crew_rostering.preprocessing.loaders import load_crew, load_duties, load_scenario, load_preferences
 from crew_rostering.preprocessing.eligibility import compute_eligibility
 from crew_rostering.preprocessing.duty_conflicts import compute_conflict_pairs
+from crew_rostering.preprocessing.coverage_check import check_coverage_feasibility
 from crew_rostering.model.rostering_model import build_rostering_model
 from crew_rostering.visualization.report import build_report_frames, save_plots, save_tables
 
 
-DEFAULT_INSTANCE_DIR = Path("data/generated/v3")
+DEFAULT_INSTANCE_DIR = Path("data/generated/v4")
 
 
 def main() -> None:
@@ -33,6 +34,18 @@ def main() -> None:
 
     eligible = compute_eligibility(crew, duties)
     conflicts = compute_conflict_pairs(duties, scenario.min_rest_minutes)
+    issues = check_coverage_feasibility(crew, duties, eligible)
+
+    if issues:
+        print("\nCoverage feasibility issues (model will be infeasible):")
+        for i in issues[:10]:
+            print(
+                f"  Duty {i.duty_id} (day {i.day}) role={i.role}: "
+                f"required={i.required}, eligible={i.eligible_count}"
+            )
+        if len(issues) > 10:
+            print(f"  ... and {len(issues) - 10} more")
+        return
 
     rm = build_rostering_model(
         crew, duties, eligible, conflicts,
