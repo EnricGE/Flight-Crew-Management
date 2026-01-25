@@ -18,7 +18,7 @@ class RosteringModel:
     work: Dict[Tuple[str, int], cp_model.IntVar] # (crew_id, day) -> BoolVar
     max_load: cp_model.IntVar
     min_load: cp_model.IntVar
-    worked_days_week: cp_model.IntVar
+    worked_days: cp_model.IntVar
     preference_cost: cp_model.IntVar
     late_to_early_total: cp_model.IntVar
     weekly_rest_shortfall_total: cp_model.IntVar
@@ -242,14 +242,15 @@ def build_rostering_model(
 
     # --- Objective: ---
     fairness_w = int(weights.get("fairness_spread", 100))
-    worked_days_week_w = int(weights.get("worked_days_week", 1))
+    worked_days_w = int(weights.get("worked_days", 1))
     pref_w = int(weights.get("off_request", 1))
     weekly_rest_w = int(weights.get("weekly_rest_shortfall", 0))
     late_to_early_w = int(weights.get("late_to_early", 0))
 
+    num_weeks = (horizon_days + 6) // 7
     weekly_rest_shortfall = model.NewIntVar(
         0,
-        R * len(crew_ids) * ((horizon_days + 6) // 7),
+        max(0, R) * len(crew_ids) * num_weeks,
         "weekly_rest_shortfall_total",
     )
 
@@ -263,8 +264,8 @@ def build_rostering_model(
     spread = model.NewIntVar(0, max_cap, "spread")
     model.Add(spread == max_load - min_load)
 
-    worked_days_week = model.NewIntVar(0, len(crew_ids) * horizon_days, "worked_days_week")
-    model.Add(worked_days_week == sum(work.values()))
+    worked_days = model.NewIntVar(0, len(crew_ids) * horizon_days, "worked_days")
+    model.Add(worked_days == sum(work.values()))
 
     # Preference cost: sum penalty * work[c,day] for OFF requests
     pref_terms = []
@@ -278,7 +279,7 @@ def build_rostering_model(
 
     model.Minimize(
         fairness_w * spread
-        + worked_days_week_w * worked_days_week
+        + worked_days_w * worked_days
         + pref_w * preference_cost
         + weekly_rest_w * weekly_rest_shortfall
         + late_to_early_w * late_to_early_total
@@ -291,7 +292,7 @@ def build_rostering_model(
         work=work,
         max_load=max_load,
         min_load=min_load,
-        worked_days_week=worked_days_week,
+        worked_days=worked_days,
         preference_cost=preference_cost,
         weekly_rest_shortfall_total=weekly_rest_shortfall,
         late_to_early_total=late_to_early_total,
