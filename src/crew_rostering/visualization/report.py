@@ -4,6 +4,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Dict, List, Tuple
 
+import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.patches as mpatches
 from matplotlib.colors import ListedColormap
@@ -22,7 +23,8 @@ cmap = ListedColormap([
     "#f2f2f2",  # 0 = rest (light grey)
     "#2ca02c",  # 1 = work (green)
     "#ff7f0e",  # 2 = off-request violated (orange)
-    "#d62728",  # 3 = weekly rest violated (red)
+    "#9467bd",  # 3 = late->early violated (purple)
+    "#d62728",  # 4 = weekly rest violated (red)
 ])
 
 @dataclass(frozen=True)
@@ -112,9 +114,38 @@ def build_report_frames(
         columns=["crew_id", "day", "penalty", "worked", "cost"]
     )
 
+    # --- Late->early violations computed from assignments ---
+    duty_by_id = {d.duty_id: d for d in duties}
+
+    late_thr = int(getattr(scenario, "late_end_threshold_min", 1080))
+    early_thr = int(getattr(scenario, "early_start_threshold_min", 540))
+
+    # For each crew/day: whether they have a late duty / early duty that day
+    late_day = {(c_id, day): 0 for c_id in crew_ids for day in days}
+    early_day = {(c_id, day): 0 for c_id in crew_ids for day in days}
+
+    # Scan assigned duties
+    for (c_id, d_id), var in rm.x.items():
+        if solver.Value(var) != 1:
+            continue
+        d = duty_by_id[d_id]
+        if d.end_min >= late_thr:
+            late_day[(c_id, d.day)] = 1
+        if d.start_min <= early_thr:
+            early_day[(c_id, d.day)] = 1
+
+    # Build a list of (crew_id, day_k) where violation happens between day_k and day_k+1
+    late_to_early_pairs = []
+    for c_id in crew_ids:
+        for day in range(1, scenario.horizon_days):
+            if late_day[(c_id, day)] == 1 and early_day[(c_id, day + 1)] == 1:
+                late_to_early_pairs.append((c_id, day))
+
+
     violation_matrix = build_violation_matrix(
-    work_matrix, weekly_rest, off_df
-)
+        work_matrix, weekly_rest, off_df, late_to_early_pairs
+    )
+    print("unique codes:", np.unique(violation_matrix.values))
 
     return ReportFrames(
         work_matrix=work_matrix,
@@ -128,6 +159,7 @@ def build_violation_matrix(
     work_matrix: pd.DataFrame,
     weekly_rest: pd.DataFrame,
     off_requests: pd.DataFrame,
+    late_to_early_pairs: List[Tuple[str, int]],
 ) -> pd.DataFrame:
     """
     Returns a matrix with codes:
@@ -135,6 +167,7 @@ def build_violation_matrix(
     1 = work (ok)
     2 = work + off-request violated
     3 = work + weekly-rest violated
+    4 = work late -> work early violated
     """
     vm = work_matrix.copy()
     vm.columns = vm.columns.astype(int)
@@ -147,13 +180,21 @@ def build_violation_matrix(
         if r["worked"] == 1:
             vm.loc[r["crew_id"], r["day"]] = 2
 
-    # --- Weekly rest violations ---
+    # --- Late->early violations (purple = code 3) ---
+    # We’ll mark the "early day" (day+1) as the problem day.
+    for c_id, day in late_to_early_pairs:
+        early_day = int(day) + 1
+        if c_id in vm.index and early_day in vm.columns:
+            if int(vm.loc[c_id, early_day]) >= 1:  # only if working that day
+                vm.loc[c_id, early_day] = 3
+
+    # --- Weekly rest violations (red = code 4) ---
     viol_weeks = weekly_rest[weekly_rest["shortfall"] > 0]
     for _, r in viol_weeks.iterrows():
         for day in range(r["start_day"], r["end_day"] + 1):
             if vm.loc[r["crew_id"], day] >= 1:
-                vm.loc[r["crew_id"], day] = 3
-
+                vm.loc[r["crew_id"], day] = 4
+    
     return vm
 
 
@@ -161,12 +202,8 @@ def save_plots(frames: ReportFrames, out_dir: Path) -> None:
     out_dir.mkdir(parents=True, exist_ok=True)
 
     # 1) Work "heatmap" (crew x day) using default matplotlib colormap
-    legend_patches = [
-        mpatches.Patch(color="white", label="Rest"),
-        mpatches.Patch(color="#2ca02c", label="Work"),
-    ]
     plt.figure()
-    plt.imshow(frames.violation_matrix.values, aspect="auto", cmap=cmap, vmin=0, vmax=3)
+    plt.imshow(frames.violation_matrix.values, aspect="auto", cmap=cmap, vmin=0, vmax=4)
     plt.yticks(
         range(len(frames.violation_matrix.index)),
         frames.violation_matrix.index,
@@ -181,6 +218,7 @@ def save_plots(frames: ReportFrames, out_dir: Path) -> None:
         mpatches.Patch(color="#f0f0f0", label="Rest"),
         mpatches.Patch(color="#2ca02c", label="Work"),
         mpatches.Patch(color="#ff7f0e", label="OFF request violated"),
+        mpatches.Patch(color="#9467bd", label="Late → Early violated"),
         mpatches.Patch(color="#d62728", label="Weekly rest violated"),
     ]
     plt.legend(

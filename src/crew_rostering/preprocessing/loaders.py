@@ -17,6 +17,8 @@ class Scenario:
     min_rest_minutes: int
     max_consecutive_work_days: int
     min_rest_days_per_week: int
+    late_end_threshold_min: int
+    early_start_threshold_min: int
     weights: Dict[str, int]
 
 
@@ -66,6 +68,8 @@ def load_scenario(path: Path) -> Scenario:
         min_rest_minutes=int(obj["min_rest_minutes"]),
         max_consecutive_work_days=int(obj["max_consecutive_work_days"]),
         min_rest_days_per_week=int(obj.get("min_rest_days_per_week", 0)),
+        late_end_threshold_min=int(obj.get("late_end_threshold_min", 1200)),
+        early_start_threshold_min=int(obj.get("early_start_threshold_min", 480)),
         weights=dict(obj.get("weights", {})),
     )
 

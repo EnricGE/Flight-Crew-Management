@@ -18,8 +18,9 @@ class RosteringModel:
     work: Dict[Tuple[str, int], cp_model.IntVar] # (crew_id, day) -> BoolVar
     max_load: cp_model.IntVar
     min_load: cp_model.IntVar
-    worked_days: cp_model.IntVar
+    worked_days_week: cp_model.IntVar
     preference_cost: cp_model.IntVar
+    late_to_early_total: cp_model.IntVar
     weekly_rest_shortfall_total: cp_model.IntVar
 
 
@@ -31,6 +32,8 @@ def build_rostering_model(
         horizon_days: int,
         max_consecutive_work_days:int,
         min_rest_days_per_week: int,
+        late_end_threshold_min: int,
+        early_start_threshold_min: int,
         weights: Dict[str, int],
         off_requests: List[OffRequest],
 ) -> RosteringModel:
@@ -165,11 +168,11 @@ def build_rostering_model(
 
                 worked_in_week = [work[(c_id, day)] for day in range(start, end + 1)]
 
-                worked_days = model.NewIntVar(0, days_in_week, f"worked_days[{c_id},w{w}]")
-                model.Add(worked_days == sum(worked_in_week))
+                worked_days_week = model.NewIntVar(0, days_in_week, f"worked_days_week[{c_id},w{w}]")
+                model.Add(worked_days_week == sum(worked_in_week))
 
                 rest_days = model.NewIntVar(0, days_in_week, f"rest_days[{c_id},w{w}]")
-                model.Add(rest_days == days_in_week - worked_days)
+                model.Add(rest_days == days_in_week - worked_days_week)
 
                 # shortfall = max(0, R - rest_days)
                 raw = model.NewIntVar(-days_in_week, R, f"raw_shortfall[{c_id},w{w}]")
@@ -180,11 +183,69 @@ def build_rostering_model(
 
                 weekly_rest_shortfall_vars.append(shortfall)
 
+    # --- Soft constraint: late duty then early next day (late->early) ---
+    late_end_thr = int(late_end_threshold_min)
+    early_start_thr = int(early_start_threshold_min)
+
+    late_work: Dict[Tuple[str, int], cp_model.IntVar] = {}
+    early_work: Dict[Tuple[str, int], cp_model.IntVar] = {}
+
+    for c_id in crew_ids:
+        for day in range(1, horizon_days + 1):
+            lw = model.NewBoolVar(f"late_work[{c_id},{day}]")
+            ew = model.NewBoolVar(f"early_work[{c_id},{day}]")
+            late_work[(c_id, day)] = lw
+            early_work[(c_id, day)] = ew
+
+            late_vars = []
+            early_vars = []
+
+            for d_id in duties_by_day[day]:
+                var = x.get((c_id, d_id))
+                if var is None:
+                    continue
+                d = duty_by_id[d_id]
+                if d.end_min >= late_end_thr:
+                    late_vars.append(var)
+                if d.start_min <= early_start_thr:
+                    early_vars.append(var)
+
+            # Link: if any late assignment => lw=1 (and lw=0 if none)
+            if late_vars:
+                for v in late_vars:
+                    model.Add(lw >= v)
+                model.Add(lw <= sum(late_vars))
+            else:
+                model.Add(lw == 0)
+
+            # Link: if any early assignment => ew=1
+            if early_vars:
+                for v in early_vars:
+                    model.Add(ew >= v)
+                model.Add(ew <= sum(early_vars))
+            else:
+                model.Add(ew == 0)
+
+    # Violation variables: v[c,day] = 1 if late on day AND early next day
+    late_to_early_violations = []
+    for c_id in crew_ids:
+        for day in range(1, horizon_days):  # day and day+1
+            v = model.NewBoolVar(f"late_to_early_violation[{c_id},{day}]")
+            # v >= late_work[c,day] + early_work[c,day+1] - 1
+            model.Add(v >= late_work[(c_id, day)] + early_work[(c_id, day + 1)] - 1)
+            model.Add(v <= late_work[(c_id, day)])
+            model.Add(v <= early_work[(c_id, day + 1)])
+            late_to_early_violations.append(v)
+
+    late_to_early_total = model.NewIntVar(0, len(crew_ids) * max(0, horizon_days - 1), "late_to_early_total")
+    model.Add(late_to_early_total == (sum(late_to_early_violations) if late_to_early_violations else 0))
+
     # --- Objective: ---
     fairness_w = int(weights.get("fairness_spread", 100))
-    worked_days_w = int(weights.get("worked_days", 1))
+    worked_days_week_w = int(weights.get("worked_days_week", 1))
     pref_w = int(weights.get("off_request", 1))
     weekly_rest_w = int(weights.get("weekly_rest_shortfall", 0))
+    late_to_early_w = int(weights.get("late_to_early", 0))
 
     weekly_rest_shortfall = model.NewIntVar(
         0,
@@ -202,8 +263,8 @@ def build_rostering_model(
     spread = model.NewIntVar(0, max_cap, "spread")
     model.Add(spread == max_load - min_load)
 
-    worked_days = model.NewIntVar(0, len(crew_ids) * horizon_days, "worked_days")
-    model.Add(worked_days == sum(work.values()))
+    worked_days_week = model.NewIntVar(0, len(crew_ids) * horizon_days, "worked_days_week")
+    model.Add(worked_days_week == sum(work.values()))
 
     # Preference cost: sum penalty * work[c,day] for OFF requests
     pref_terms = []
@@ -217,9 +278,10 @@ def build_rostering_model(
 
     model.Minimize(
         fairness_w * spread
-        + worked_days_w * worked_days
+        + worked_days_week_w * worked_days_week
         + pref_w * preference_cost
         + weekly_rest_w * weekly_rest_shortfall
+        + late_to_early_w * late_to_early_total
     )
 
     return RosteringModel(
@@ -229,8 +291,9 @@ def build_rostering_model(
         work=work,
         max_load=max_load,
         min_load=min_load,
-        worked_days=worked_days,
+        worked_days_week=worked_days_week,
         preference_cost=preference_cost,
         weekly_rest_shortfall_total=weekly_rest_shortfall,
+        late_to_early_total=late_to_early_total,
     )
 
