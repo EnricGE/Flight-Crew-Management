@@ -202,7 +202,7 @@ def save_plots(frames: ReportFrames, out_dir: Path) -> None:
     out_dir.mkdir(parents=True, exist_ok=True)
 
     # 1) Work "heatmap" (crew x day) using default matplotlib colormap
-    plt.figure()
+    plt.figure(figsize=(12, 6))
     plt.imshow(frames.violation_matrix.values, aspect="auto", cmap=cmap, vmin=0, vmax=4)
     plt.yticks(
         range(len(frames.violation_matrix.index)),
@@ -232,7 +232,7 @@ def save_plots(frames: ReportFrames, out_dir: Path) -> None:
     plt.close()
 
     # 2) Workloads bar chart (minutes)
-    plt.figure()
+    plt.figure(figsize=(12, 6))
     plt.bar(frames.workloads["crew_id"], frames.workloads["total_minutes"])
     plt.xlabel("Crew")
     plt.ylabel("Total minutes")

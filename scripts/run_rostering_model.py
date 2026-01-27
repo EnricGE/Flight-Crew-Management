@@ -11,7 +11,7 @@ from ortools.sat.python import cp_model
 from crew_rostering.preprocessing.loaders import load_crew, load_duties, load_scenario, load_preferences
 from crew_rostering.preprocessing.eligibility import compute_eligibility
 from crew_rostering.preprocessing.duty_conflicts import compute_conflict_pairs
-from crew_rostering.preprocessing.coverage_check import check_coverage_feasibility
+from crew_rostering.preprocessing.coverage_check import check_coverage_feasibility, check_aggregate_coverage_feasibility
 from crew_rostering.model.rostering_model import build_rostering_model
 from crew_rostering.visualization.report import build_report_frames, save_plots, save_tables
 
@@ -45,6 +45,19 @@ def main() -> None:
             )
         if len(issues) > 10:
             print(f"  ... and {len(issues) - 10} more")
+        return
+    
+    agg_issues = check_aggregate_coverage_feasibility(crew, duties)
+    if agg_issues:
+        print("\n❌ Aggregate coverage infeasible (simultaneous demand):")
+        for i in agg_issues[:10]:
+            print(
+                f"  Day {i.day} | {i.base} | {i.aircraft_type} | {i.role}: "
+                f"required={i.required_total}, available={i.available_total} "
+                f"(duties={i.duty_ids})"
+            )
+        if len(agg_issues) > 10:
+            print(f"  ... and {len(agg_issues) - 10} more")
         return
 
     rm = build_rostering_model(
