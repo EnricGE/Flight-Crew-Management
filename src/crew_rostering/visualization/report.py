@@ -166,8 +166,8 @@ def build_violation_matrix(
     0 = rest
     1 = work (ok)
     2 = work + off-request violated
-    3 = work + weekly-rest violated
-    4 = work late -> work early violated
+    3 = work late -> work early violated
+    4 = work + weekly-rest violated
     """
     vm = work_matrix.copy()
     vm.columns = vm.columns.astype(int)
