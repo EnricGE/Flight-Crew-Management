@@ -16,7 +16,6 @@ Given:
 * Operational rules (rest, duty conflicts, base, qualifications)
 
 We compute a **weekly roster** that:
-
 * Covers all duties
 * Respects hard constraints
 * Minimizes penalties from soft constraints
@@ -60,11 +59,11 @@ All input data is JSON-based.
 * `late_end_threshold_min`: Duty end time (in minutes) after which a duty is considered late.
 * `early_start_threshold_min`: Duty start time (in minutes) before which a duty is considered early.
 * `weights`: Objective weights controlling trade-offs between soft constraints:
- * `fairness_spread`: workload balance across crew
- * `worked_days`: total number of worked days
- * `off_request`: penalty for violating day-off requests
- * `weekly_rest_shortfall`: missing weekly rest days
- * `late_to_early`: late-duty followed by early-duty fatigue risk
+  * `fairness_spread`: workload balance across crew
+  * `worked_days`: total number of worked days
+  * `off_request`: penalty for violating day-off requests
+  * `weekly_rest_shortfall`: missing weekly rest days
+  * `late_to_early`: late-duty followed by early-duty fatigue risk
 
 ---
 
@@ -97,7 +96,6 @@ All input data is JSON-based.
    Each duty must have required CAPT / FO / FA
 
 2. **Eligibility**
-
    * Matching base
    * Qualified aircraft type
    * Matching role
