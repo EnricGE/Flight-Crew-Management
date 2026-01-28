@@ -29,20 +29,6 @@ All input data is JSON-based.
 
 ### `crew.json`
 
-```json
-{
-  "crew": [
-    {
-      "crew_id": "FA1",
-      "role": "FA",
-      "base": "CDG",
-      "qualified_types": ["A320", "A321"],
-      "max_minutes": 2000
-    }
-  ]
-}
-```
-
 **Fields**
 
 * `crew_id`: unique identifier
@@ -55,22 +41,6 @@ All input data is JSON-based.
 
 ### `duties.json`
 
-```json
-{
-  "duties": [
-    {
-      "duty_id": "D01",
-      "day": 1,
-      "start_min": 360,
-      "end_min": 600,
-      "base": "CDG",
-      "aircraft_type": "A321",
-      "coverage": { "CAPT": 1, "FO": 1, "FA": 4 }
-    }
-  ]
-}
-```
-
 **Fields**
 
 * `day`: 1-based day index
@@ -81,37 +51,28 @@ All input data is JSON-based.
 
 ### `scenario.json`
 
-```json
-{
-  "horizon_days": 7,
-  "min_rest_minutes": 60,
-  "max_consecutive_work_days": 5,
-  "min_rest_days_per_week": 4,
-  "late_end_threshold_min": 1200,
-  "early_start_threshold_min": 480,
-  "weights": {
-    "fairness_spread": 10,
-    "worked_days": 10,
-    "off_request": 1,
-    "weekly_rest_shortfall": 4,
-    "late_to_early": 10
-  }
-}
-```
+**Fields**
+
+* `horizon_days`: Planning horizon length (number of days).
+* `min_rest_minutes`: Minimum rest time between two duties (used to detect duty conflicts).
+* `max_consecutive_work_days`: Maximum number of consecutive working days allowed per crew member (hard constraint).
+* `min_rest_days_per_week`: Minimum number of rest days required per crew per week (soft constraint).
+* `late_end_threshold_min`: Duty end time (in minutes) after which a duty is considered late.
+* `early_start_threshold_min`: Duty start time (in minutes) before which a duty is considered early.
+* `weights`: Objective weights controlling trade-offs between soft constraints:
+ * `fairness_spread`: workload balance across crew
+ * `worked_days`: total number of worked days
+ * `off_request`: penalty for violating day-off requests
+ * `weekly_rest_shortfall`: missing weekly rest days
+ * `late_to_early`: late-duty followed by early-duty fatigue risk
 
 ---
 
 ### `preferences.json` (optional)
 
-```json
-{
-  "off_requests": [
-    { "crew_id": "FA1", "day": 1, "penalty": 60 }
-  ]
-}
-```
+**Fields**
 
-If the file is missing, preferences are ignored.
+* `off_requests`: No working day requests
 
 ---
 
@@ -130,7 +91,7 @@ If the file is missing, preferences are ignored.
 
 ## 4. Constraints
 
-### Hard Constraints (must be satisfied)
+### Hard Constraints
 
 1. **Duty coverage**
    Each duty must have required CAPT / FO / FA
@@ -214,14 +175,6 @@ python scripts/run_rostering_model.py \
 * KPIs
 * Objective breakdown
 
-Example:
-
-```
-Status: OPTIMAL
-objective: 13106
-late_to_early_total: 1
-```
-
 ---
 
 ### JSON outputs
@@ -264,13 +217,11 @@ The **heatmap highlights**:
 ## 8. Design Choices
 
 * CP-SAT chosen for:
-
   * Logical constraints
   * Indicator variables
   * Soft constraints via penalties
 * No metaheuristics required — CP-SAT efficiently explores feasible schedules
 * Model structured to scale to:
-
   * Longer horizons
   * More bases
   * Additional rules
