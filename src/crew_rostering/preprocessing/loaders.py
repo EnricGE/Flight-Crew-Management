@@ -13,6 +13,34 @@ from crew_rostering.domain.preferences import OffRequest
 
 @dataclass(frozen=True)
 class Scenario:
+    """
+    Defines global parameters and objective weights for a rostering instance.
+
+    A Scenario encapsulates operational rules and modeling assumptions
+    that apply to the entire planning horizon. It also defines the
+    relative importance (weights) of soft constraints in the objective.
+
+    Attributes
+    ----------
+    horizon_days : int
+        Length of the planning horizon in days.
+    min_rest_minutes : int
+        Minimum rest time between two duties.
+        Used to detect infeasible duty combinations.
+    max_consecutive_work_days : int
+        Maximum number of consecutive working days allowed per crew member.
+        Enforced as a hard constraint.
+    min_rest_days_per_week : int
+        Minimum number of rest days required per crew per week.
+        Violations are penalized as a soft constraint.
+    late_end_threshold_min : int
+        Duty end time (in minutes) after which a duty is considered "late".
+    early_start_threshold_min : int
+        Duty start time (in minutes) before which a duty is considered "early".
+    weights : Dict[str, int]
+        Objective weights controlling trade-offs between soft constraints
+        (fairness, preferences, rest violations, fatigue risk).
+    """
     horizon_days: int
     min_rest_minutes: int
     max_consecutive_work_days: int
