@@ -1,0 +1,12 @@
+{
+  "id": "S004",
+  "name": "extra off requests",
+  "changes": [
+    {
+      "type": "add_off_request",
+      "crew_id": "FA1",
+      "day": 1,
+      "penalty": 80
+    }
+  ]
+}

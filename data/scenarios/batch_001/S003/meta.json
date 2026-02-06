@@ -1,0 +1,11 @@
+{
+  "id": "S003",
+  "name": "late duty extended",
+  "changes": [
+    {
+      "type": "extend_duty",
+      "duty_id": "D14",
+      "delta_end_min": 60
+    }
+  ]
+}

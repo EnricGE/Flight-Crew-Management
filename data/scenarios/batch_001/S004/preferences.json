@@ -1,0 +1,104 @@
+{
+  "off_requests": [
+    {
+      "crew_id": "C1",
+      "day": 1,
+      "penalty": 50
+    },
+    {
+      "crew_id": "C2",
+      "day": 2,
+      "penalty": 30
+    },
+    {
+      "crew_id": "F1",
+      "day": 3,
+      "penalty": 40
+    },
+    {
+      "crew_id": "F3",
+      "day": 4,
+      "penalty": 20
+    },
+    {
+      "crew_id": "FA1",
+      "day": 1,
+      "penalty": 60
+    },
+    {
+      "crew_id": "FA2",
+      "day": 1,
+      "penalty": 60
+    },
+    {
+      "crew_id": "FA3",
+      "day": 2,
+      "penalty": 40
+    },
+    {
+      "crew_id": "FA4",
+      "day": 2,
+      "penalty": 40
+    },
+    {
+      "crew_id": "FA5",
+      "day": 2,
+      "penalty": 50
+    },
+    {
+      "crew_id": "FA6",
+      "day": 1,
+      "penalty": 50
+    },
+    {
+      "crew_id": "FA7",
+      "day": 5,
+      "penalty": 50
+    },
+    {
+      "crew_id": "FA8",
+      "day": 5,
+      "penalty": 50
+    },
+    {
+      "crew_id": "FA9",
+      "day": 4,
+      "penalty": 45
+    },
+    {
+      "crew_id": "FA10",
+      "day": 5,
+      "penalty": 45
+    },
+    {
+      "crew_id": "FA11",
+      "day": 5,
+      "penalty": 35
+    },
+    {
+      "crew_id": "FA12",
+      "day": 5,
+      "penalty": 35
+    },
+    {
+      "crew_id": "FA13",
+      "day": 5,
+      "penalty": 35
+    },
+    {
+      "crew_id": "FA14",
+      "day": 7,
+      "penalty": 35
+    },
+    {
+      "crew_id": "FA15",
+      "day": 7,
+      "penalty": 70
+    },
+    {
+      "crew_id": "FA1",
+      "day": 1,
+      "penalty": 80
+    }
+  ]
+}

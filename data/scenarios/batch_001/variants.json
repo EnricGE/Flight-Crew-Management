@@ -1,0 +1,31 @@
+{
+  "base_instance_dir": "data/generated/v4",
+  "variants": [
+    {
+      "id": "S001",
+      "name": "baseline",
+      "changes": []
+    },
+    {
+      "id": "S002",
+      "name": "FA shortage",
+      "changes": [
+        { "type": "remove_crew", "crew_id": "FA3" }
+      ]
+    },
+    {
+      "id": "S003",
+      "name": "late duty extended",
+      "changes": [
+        { "type": "extend_duty", "duty_id": "D14", "delta_end_min": 60 }
+      ]
+    },
+    {
+      "id": "S004",
+      "name": "extra off requests",
+      "changes": [
+        { "type": "add_off_request", "crew_id": "FA1", "day": 1, "penalty": 80 }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,10 @@
+{
+  "id": "S002",
+  "name": "FA shortage",
+  "changes": [
+    {
+      "type": "remove_crew",
+      "crew_id": "FA3"
+    }
+  ]
+}
