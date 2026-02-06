@@ -1,14 +1,46 @@
-# Python
+# ===============================
+# Python / Packaging
+# ===============================
 __pycache__/
+*.py[cod]
+*.pyo
+*.pyd
 *.pyc
 
 # Virtual environments
 .venv/
 venv/
+ENV/
 
-# OS / IDE
-.DS_Store
+# Packaging metadata
+*.egg-info/
+dist/
+build/
+
+# ===============================
+# uv / pip
+# ===============================
+.uv/
+uv.lock
+
+# ===============================
+# VS Code
+# ===============================
 .vscode/
+*.code-workspace
 
-# Outputs
+# ===============================
+# OS files
+# ===============================
+.DS_Store
+Thumbs.db
+
+# ===============================
+# Project outputs
+# ===============================
 outputs/
+
+# ===============================
+# Logs
+# ===============================
+*.log
