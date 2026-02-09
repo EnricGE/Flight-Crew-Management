@@ -1,242 +1,167 @@
-# ✈️ Flight Crew Rostering — CP-SAT Optimization
+# ✈️ Crew Rostering — Decision Under Operational Constraints
 
-This project implements a **realistic airline crew rostering problem** using **OR-Tools CP-SAT**, including hard operational constraints, soft preferences, and multi-criteria optimization.
-
-The goal is **not just feasibility**, but to **balance fairness, preferences, and regulatory rules** under tight resources.
-
----
-
-## 1. Problem Overview
-
-Given:
-
-* A set of **crew members** (Captains, First Officers, Flight Attendants)
-* A set of **flight duties** across multiple days
-* Aircraft-specific **crew coverage requirements**
-* Operational rules (rest, duty conflicts, base, qualifications)
-
-We compute a **weekly roster** that:
-* Covers all duties
-* Respects hard constraints
-* Minimizes penalties from soft constraints
+**Workforce planning, fairness trade-offs, and defensible scheduling decisions**
+*Including hard operational constraints, soft preferences, and multi-criteria optimization.*
 
 ---
 
-## 2. Data Schema
+## 1. Context & Motivation
 
-All input data is JSON-based.
+Crew rostering decisions are rarely about *finding any feasible schedule*.  
+They are about **choosing an operational roster** that balances:
 
-### `crew.json`
+- coverage feasibility  
+- regulatory and contractual constraints  
+- fairness across crew members  
+- fatigue and quality-of-life considerations  
 
-**Fields**
+This project studies a **realistic airline crew rostering decision problem under strict operational constraints**, using optimisation to support **transparent, defensible scheduling decisions**.
 
-* `crew_id`: unique identifier
-* `role`: `CAPT`, `FO`, `FA`
-* `base`: home airport (e.g. `CDG`, `ORY`)
-* `qualified_types`: aircraft types crew can operate
-* `max_minutes`: max duty minutes over horizon
+The goal is not to build a generic scheduling solver, but to answer:
 
----
-
-### `duties.json`
-
-**Fields**
-
-* `day`: 1-based day index
-* `start_min`, `end_min`: minutes since midnight
-* `coverage`: required crew by role (aircraft dependent)
+> *“Given limited crew resources and hard operational rules, what roster should we operate — and what trade-offs does it imply?”*
 
 ---
 
-### `scenario.json`
+## 2. Decision Problem
 
-**Fields**
+An airline must construct a crew roster over a fixed planning horizon.
 
-* `horizon_days`: Planning horizon length (number of days).
-* `min_rest_minutes`: Minimum rest time between two duties (used to detect duty conflicts).
-* `max_consecutive_work_days`: Maximum number of consecutive working days allowed per crew member (hard constraint).
-* `min_rest_days_per_week`: Minimum number of rest days required per crew per week (soft constraint).
-* `late_end_threshold_min`: Duty end time (in minutes) after which a duty is considered late.
-* `early_start_threshold_min`: Duty start time (in minutes) before which a duty is considered early.
-* `weights`: Objective weights controlling trade-offs between soft constraints:
-  * `fairness_spread`: workload balance across crew
-  * `worked_days`: total number of worked days
-  * `off_request`: penalty for violating day-off requests
-  * `weekly_rest_shortfall`: missing weekly rest days
-  * `late_to_early`: late-duty followed by early-duty fatigue risk
+The system includes:
+- crew members with roles, bases, and qualifications  
+- flight duties distributed across multiple days  
+- regulatory and operational rules on rest and workload  
 
----
+The roster determines:
+- who works which duties  
+- how workload is distributed  
+- where fatigue and fairness risks appear  
 
-### `preferences.json` (optional)
-
-**Fields**
-
-* `off_requests`: No working day requests
+All hard rules are **strictly enforced**.  
+The decision-maker must choose **one roster**.
 
 ---
 
-## 3. Decision Variables
+## 3. Operational Policies Considered
 
-| Variable               | Meaning                       |
-| ---------------------- | ----------------------------- |
-| `x[c,d]`               | Crew `c` assigned to duty `d` |
-| `work[c,day]`          | Crew `c` works on day         |
-| `total_minutes[c]`     | Total duty minutes            |
-| `late_work[c,day]`     | Crew ends late that day       |
-| `early_work[c,day]`    | Crew starts early that day    |
-| `late_to_early[c,day]` | Late → early violation        |
+Each feasible roster corresponds to an **implicit operational policy**, defined by:
+
+- assignment of crew to duties  
+- distribution of worked days and duty minutes  
+- exposure to fatigue patterns (late → early sequences)  
+
+Different rosters represent different strategic choices, such as:
+- prioritising workload balance  
+- minimising total worked days  
+- protecting rest patterns at the expense of fairness  
 
 ---
 
-## 4. Constraints
+## 4. Modelling & Evaluation Approach
+
+The problem is formulated as a **constraint-based optimisation model**:
+
+- Binary assignment variables  
+- Indicator variables for workload and fatigue patterns  
+- Linear penalties for undesirable but acceptable patterns  
+
+Key characteristics:
+- Hard constraints ensure feasibility  
+- Soft constraints express preferences and risk exposure  
+- A single objective aggregates trade-offs  
+
+Each candidate roster is evaluated on:
+- feasibility  
+- total penalty score  
+- distribution of workload and rest  
+
+---
+
+## 5. Decision Variables & Constraints
+
+### Decision Variables
+- Assignment of crew to duties  
+- Daily work indicators  
+- Fatigue and rest pattern indicators  
 
 ### Hard Constraints
+- Duty coverage by role  
+- Qualification and base eligibility  
+- Duty overlap prevention  
+- Maximum workload limits  
+- Maximum consecutive work days  
 
-1. **Duty coverage**
-   Each duty must have required CAPT / FO / FA
+### Soft Constraints (penalised)
+- Workload fairness  
+- Total worked days  
+- Day-off request violations  
+- Weekly rest shortfall  
+- Late → early fatigue patterns  
 
-2. **Eligibility**
-   * Matching base
-   * Qualified aircraft type
-   * Matching role
-
-3. **Duty conflicts**
-   Overlapping duties forbidden
-
-4. **Max workload**
-   `total_minutes[c] ≤ max_minutes`
-
-5. **Max consecutive work days**
-   Sliding window constraint
+These constraints define the **decision trade-off space**.
 
 ---
 
-### Soft Constraints (penalized)
+## 6. Objective Function
 
-| Constraint      | Description                               |
-| --------------- | ----------------------------------------- |
-| Fairness spread | Minimize max–min workload                 |
-| Worked days     | Penalize total worked days                |
-| OFF requests    | Working on requested-off day              |
-| Weekly rest     | Missing minimum rest days per week        |
-| Late → Early    | Late duty followed by early duty next day |
+The decision criterion is:
 
-All soft constraints contribute linearly to the objective.
+```
+Minimise total weighted penalty
+```
+
+Where penalties reflect:
+- fairness imbalance  
+- excessive workload  
+- violation of crew preferences  
+- fatigue risk  
+
+The weights encode **management priorities and risk tolerance**.
 
 ---
 
-## 5. Objective Function
+## 7. Decision Insights
 
-The solver minimizes:
+Typical questions this model helps answer:
 
-```
-Σ weight_i × violation_i
-```
+- Where are fairness and feasibility in conflict?  
+- Which crew members carry disproportionate workload?  
+- How do rest rules constrain flexibility?  
+- What is the cost of protecting fatigue-sensitive patterns?  
 
-Specifically:
-
-```
-10 × fairness_spread
-+ 10 × worked_days
-+ 1 × off_request_penalty
-+ 4 × weekly_rest_shortfall
-+ 10 × late_to_early_violations
-```
-
-The full **objective breakdown** is exported to JSON.
+The value lies in **understanding why a roster looks the way it does**, not just generating it.
 
 ---
 
-## 6. How to Run
+## 8. Decision Recommendation
 
-### Install dependencies
+For a given scenario, the recommended decision is:
 
-```bash
-uv sync
-```
+> **The feasible roster with the lowest total penalty, respecting all hard operational constraints while balancing fairness and fatigue risk.**
 
-### Run the model
-
-```bash
-python scripts/run_rostering_model.py \
-  --instance-dir data/generated/v3 \
-  --time-limit 10
-```
+Because all assumptions and penalties are explicit, the recommendation is:
+- transparent  
+- auditable  
+- adjustable to policy changes  
 
 ---
 
-## 7. Outputs
+## 9. Limitations & Extensions
 
-### Terminal summary
+This is a **simplified planning model**.
 
-* Solver status
-* KPIs
-* Objective breakdown
+Not included (yet):
+- pairing or multi-day rotations  
+- reserve crew dynamics  
+- demand uncertainty  
+- real-time recovery  
 
----
-
-### JSON outputs
-
-```
-outputs/solutions/rostering_solution.json
-outputs/report/objective_breakdown.json
-```
+These extensions would enable richer operational decision support.
 
 ---
 
-### CSV reports
+## 10. Takeaway
 
-```
-outputs/report/work_matrix.csv
-outputs/report/workloads.csv
-outputs/report/weekly_rest.csv
-outputs/report/off_requests.csv
-```
+> **The value of crew rostering lies not in assigning duties, but in making explicit the trade-offs between fairness, feasibility, and fatigue.**
 
----
-
-### Visualizations
-
-```
-outputs/report/work_calendar.png
-outputs/report/workloads.png
-```
-
-The **heatmap highlights**:
-
-* Grey: rest
-* Green: work
-* Orange: OFF request violated
-* Purple: late → early violation
-* Red: weekly rest violation
-
----
-
-## 8. Design Choices
-
-* CP-SAT chosen for:
-  * Logical constraints
-  * Indicator variables
-  * Soft constraints via penalties
-* No metaheuristics required — CP-SAT efficiently explores feasible schedules
-* Model structured to scale to:
-  * Longer horizons
-  * More bases
-  * Additional rules
-
----
-
-## 9. Possible Extensions
-
-* Pairing / multi-day rotations
-* Base change penalties
-* Crew preference fairness
-* Aircraft-dependent duty durations
-* Interactive dashboards (Plotly)
-
----
-
-## 10. Author Notes
-
-This project focuses on **decision quality**, not prediction.
-It demonstrates **operations research modeling**, **constraint design**, and **trade-off analysis** under competing operational objectives.
+This project demonstrates how optimisation can be used as a **Decision Intelligence tool** to justify workforce scheduling decisions under real-world constraints.
