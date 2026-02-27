@@ -7,7 +7,7 @@ from crew_rostering.preprocessing.loaders import load_crew, load_duties, load_sc
 from crew_rostering.preprocessing.eligibility import compute_eligibility
 from crew_rostering.preprocessing.duty_conflicts import compute_conflict_pairs
 
-DEFAULT_INSTANCE_DIR = Path("data/generated/v0")
+DEFAULT_INSTANCE_DIR = Path("data/generated/v4")
 
 
 def main() -> None:

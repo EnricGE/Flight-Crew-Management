@@ -8,7 +8,7 @@ from crew_rostering.preprocessing.loaders import load_crew, load_duties, load_sc
 from crew_rostering.preprocessing.validate_crew_duties import validate_crew, validate_duties
 
 
-DEFAULT_INSTANCE_DIR = Path("data/generated/v0")
+DEFAULT_INSTANCE_DIR = Path("data/generated/v4")
 
 
 def main() -> None:
@@ -17,7 +17,7 @@ def main() -> None:
         "--instance-dir",
         type=Path,
         default=DEFAULT_INSTANCE_DIR,
-        help="Path to instance folder (default: data/generated/v0)",
+        help="Path to instance folder (default: data/generated/v4)",
     )
     args = parser.parse_args()
 

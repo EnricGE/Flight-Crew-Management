@@ -6,27 +6,28 @@
     { "crew_id": "C4", "role": "CAPT", "base": "ORY", "qualified_types": ["A320", "A220", "A321"], "max_minutes": 2400 },
     { "crew_id": "C5", "role": "CAPT", "base": "ORY", "qualified_types": ["A320", "A220"], "max_minutes": 2400 },
 
-    { "crew_id": "F1", "role": "FO", "base": "CDG", "qualified_types": ["A320", "A321"], "max_minutes": 2400 },
-    { "crew_id": "F2", "role": "FO", "base": "CDG", "qualified_types": ["A320"], "max_minutes": 2400 },
-    { "crew_id": "F3", "role": "FO", "base": "ORY", "qualified_types": ["A320", "A220"], "max_minutes": 2400 },
-    { "crew_id": "F4", "role": "FO", "base": "ORY", "qualified_types": ["A321"], "max_minutes": 2400 },
-    { "crew_id": "F5", "role": "FO", "base": "ORY", "qualified_types": ["A321", "A220"], "max_minutes": 2400 },
+    { "crew_id": "FO1", "role": "FO", "base": "CDG", "qualified_types": ["A320", "A321"], "max_minutes": 2400 },
+    { "crew_id": "FO2", "role": "FO", "base": "CDG", "qualified_types": ["A320"], "max_minutes": 2400 },
+    { "crew_id": "FO3", "role": "FO", "base": "ORY", "qualified_types": ["A321"], "max_minutes": 2400 },
+    { "crew_id": "FO4", "role": "FO", "base": "ORY", "qualified_types": ["A321", "A220"], "max_minutes": 2400 },
+    { "crew_id": "FO5", "role": "FO", "base": "ORY", "qualified_types": ["A320", "A220"], "max_minutes": 2400 },
 
     { "crew_id": "FA1", "role": "FA", "base": "CDG", "qualified_types": ["A320", "A321"], "max_minutes": 2000 },
     { "crew_id": "FA2", "role": "FA", "base": "CDG", "qualified_types": ["A320", "A321"], "max_minutes": 2000 },
     { "crew_id": "FA3", "role": "FA", "base": "CDG", "qualified_types": ["A320", "A321"], "max_minutes": 2000 },
     { "crew_id": "FA4", "role": "FA", "base": "CDG", "qualified_types": ["A320", "A321"], "max_minutes": 2000 },
     { "crew_id": "FA5", "role": "FA", "base": "CDG", "qualified_types": ["A320", "A321"], "max_minutes": 2000 },
-    { "crew_id": "FA6", "role": "FA", "base": "CDG", "qualified_types": ["A320", "A321"], "max_minutes": 2000 },
-    { "crew_id": "FA7", "role": "FA", "base": "CDG", "qualified_types": ["A320", "A321", "A220"], "max_minutes": 2000 },
-    { "crew_id": "FA8", "role": "FA", "base": "CDG", "qualified_types": ["A320", "A321", "A220"], "max_minutes": 2000 },
 
-    { "crew_id": "FA9",  "role": "FA", "base": "ORY", "qualified_types": ["A320", "A321"], "max_minutes": 2000 },
+    { "crew_id": "FA6", "role": "FA", "base": "CDG", "qualified_types": ["A320", "A321", "A220"], "max_minutes": 1000 },
+    { "crew_id": "FA7", "role": "FA", "base": "CDG", "qualified_types": ["A320", "A321", "A220"], "max_minutes": 1000 },
+    { "crew_id": "FA8", "role": "FA", "base": "ORY", "qualified_types": ["A320", "A321"], "max_minutes": 1000 },
+    { "crew_id": "FA9", "role": "FA", "base": "ORY", "qualified_types": ["A320", "A321"], "max_minutes": 2000 },
     { "crew_id": "FA10", "role": "FA", "base": "ORY", "qualified_types": ["A320", "A321"], "max_minutes": 2000 },
+
     { "crew_id": "FA11", "role": "FA", "base": "ORY", "qualified_types": ["A320", "A321"], "max_minutes": 2000 },
     { "crew_id": "FA12", "role": "FA", "base": "ORY", "qualified_types": ["A320", "A321"], "max_minutes": 2000 },
-    { "crew_id": "FA13", "role": "FA", "base": "ORY", "qualified_types": ["A320", "A321"], "max_minutes": 2000 },
+    { "crew_id": "FA13", "role": "FA", "base": "ORY", "qualified_types": ["A320", "A321", "A220"], "max_minutes": 2000 },
     { "crew_id": "FA14", "role": "FA", "base": "ORY", "qualified_types": ["A320", "A321", "A220"], "max_minutes": 2000 },
-    { "crew_id": "FA15", "role": "FA", "base": "ORY", "qualified_types": ["A320", "A321", "A220"], "max_minutes": 2000 }
+    { "crew_id": "FA15", "role": "FA", "base": "CDG", "qualified_types": ["A320", "A220"], "max_minutes": 2400 }
   ]
 }

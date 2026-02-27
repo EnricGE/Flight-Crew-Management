@@ -20,6 +20,7 @@ def main():
     print("Status:", res["status"])
     if res["status"] not in ("OPTIMAL", "FEASIBLE"):
         return
+    
     print("objective:", res["objective"])
     print("spread:", res["spread"])
     print("worked_days:", res["worked_days"])

@@ -6,7 +6,7 @@ from crew_rostering.domain.crew import CrewMember
 from crew_rostering.domain.duty import Duty
 
 
-ALLOWED_ROLES = {"CAPT", "FO"}
+ALLOWED_ROLES = {"CAPT", "FO", "FA"}
 
 
 def validate_crew(crew: Sequence[CrewMember]) -> None:

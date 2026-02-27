@@ -8,8 +8,8 @@
   "weights": {
     "fairness_spread": 10,
     "worked_days": 10,
-    "off_request": 1,
+    "off_request": 2,
     "weekly_rest_shortfall": 4,
-    "late_to_early": 2
+    "late_to_early": 1
   }
 }

@@ -13,7 +13,7 @@ from crew_rostering.preprocessing.duty_conflicts import compute_conflict_pairs
 from crew_rostering.model.feasibility_model import build_feasibility_model
 
 
-DEFAULT_INSTANCE_DIR = Path("data/generated/v0")
+DEFAULT_INSTANCE_DIR = Path("data/generated/v4")
 
 
 def main() -> None:
