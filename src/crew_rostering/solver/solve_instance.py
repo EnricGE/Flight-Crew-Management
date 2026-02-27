@@ -15,6 +15,7 @@ from crew_rostering.preprocessing.loaders import (
 from crew_rostering.preprocessing.eligibility import compute_eligibility
 from crew_rostering.preprocessing.duty_conflicts import compute_conflict_pairs
 from crew_rostering.model.rostering_model import build_rostering_model
+from crew_rostering.visualization.report import build_report_frames, save_tables, save_plots
 
 
 def objective_breakdown(solver: cp_model.CpSolver, rm: Any, weights: Dict[str, int]) -> Dict[str, Any]:
@@ -158,5 +159,17 @@ def solve_instance(
         }
         out_path.write_text(json.dumps(payload, indent=2), encoding="utf-8")
         result["solution_json"] = str(out_path)
+
+        frames = build_report_frames(
+            solver=solver,
+            rm=rm,
+            crew=crew,
+            duties=duties,
+            scenario=scenario,
+            off_requests=prefs,
+        )
+
+        save_tables(frames, rep_dir)
+        save_plots(frames, rep_dir)
 
     return result

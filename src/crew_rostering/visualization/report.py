@@ -2,10 +2,11 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Dict, List, Tuple
+from typing import Dict, List, Tuple, Any, Optional
 
 import numpy as np
 import matplotlib.pyplot as plt
+import matplotlib.lines as mlines
 import matplotlib.patches as mpatches
 from matplotlib.colors import ListedColormap
 import pandas as pd
@@ -97,7 +98,7 @@ def build_report_frames(
 
     weekly_rest = pd.DataFrame(rows).sort_values(["crew_id", "week"])
 
-    # --- OFF requests violations (worked on requested-off day) ---
+    # --- OFF requests conflicts (worked on requested-off day) ---
     req_rows = []
     for r in off_requests:
         worked = solver.Value(rm.work.get((r.crew_id, r.day), 0))
@@ -114,7 +115,7 @@ def build_report_frames(
         columns=["crew_id", "day", "penalty", "worked", "cost"]
     )
 
-    # --- Late->early violations computed from assignments ---
+    # --- Late->early conflicts computed from assignments ---
     duty_by_id = {d.duty_id: d for d in duties}
 
     late_thr = int(getattr(scenario, "late_end_threshold_min", 1080))
@@ -134,7 +135,7 @@ def build_report_frames(
         if d.start_min <= early_thr:
             early_day[(c_id, d.day)] = 1
 
-    # Build a list of (crew_id, day_k) where violation happens between day_k and day_k+1
+    # Build a list of (crew_id, day_k) where conflicts happens between day_k and day_k+1
     late_to_early_pairs = []
     for c_id in crew_ids:
         for day in range(1, scenario.horizon_days):
@@ -175,12 +176,12 @@ def build_violation_matrix(
     # Start: 0 or 1
     vm[:] = vm.values
 
-    # --- OFF-request violations ---
+    # --- OFF-request conflicts ---
     for _, r in off_requests.iterrows():
         if r["worked"] == 1:
             vm.loc[r["crew_id"], r["day"]] = 2
 
-    # --- Late->early violations (purple = code 3) ---
+    # --- Late->early conflicts (purple = code 3) ---
     # We’ll mark the "early day" (day+1) as the problem day.
     for c_id, day in late_to_early_pairs:
         early_day = int(day) + 1
@@ -188,7 +189,7 @@ def build_violation_matrix(
             if int(vm.loc[c_id, early_day]) >= 1:  # only if working that day
                 vm.loc[c_id, early_day] = 3
 
-    # --- Weekly rest violations (red = code 4) ---
+    # --- Weekly rest conflicts (red = code 4) ---
     viol_weeks = weekly_rest[weekly_rest["shortfall"] > 0]
     for _, r in viol_weeks.iterrows():
         for day in range(r["start_day"], r["end_day"] + 1):
@@ -197,38 +198,183 @@ def build_violation_matrix(
     
     return vm
 
+def plot_feasibility_utilization(
+    frames: "ReportFrames",
+    out_dir: Path,
+    objective: Optional[Dict[str, Any]] = None,
+) -> None:
+    """
+    Executive plot:
+      - Coverage proxy (1 - violation rate)
+      - Avg workload (h/crew)
+      - Total penalty (secondary axis, if provided)
+    """
+    out_dir.mkdir(parents=True, exist_ok=True)
+
+    workloads = frames.workloads
+    avg_workload = (workloads["total_minutes"] / 60.0).mean()
+
+    # Coverage proxy:
+    # measure "how clean" the roster is from the violation matrix.
+    vm = frames.violation_matrix
+    total_cells = vm.size
+    clean_cells = int((vm.values == 0).sum()) if total_cells else 0
+    coverage_proxy_pct = 100.0 * clean_cells / total_cells if total_cells else 100.0
+
+    penalty = None
+    if objective is not None:
+        # support either key
+        penalty = objective.get("objective_value", objective.get("total_penalty", None))
+
+    fig, ax1 = plt.subplots()
+
+    ax1.bar(
+        ["Roster quality (%)", "Avg workload (h/crew)"],
+        [coverage_proxy_pct, avg_workload],
+    )
+    ax1.set_ylabel("Quality / Utilization")
+    ax1.set_ylim(0, 110)
+
+    if penalty is not None:
+        ax2 = ax1.twinx()
+        ax2.plot(["Penalty"], [penalty], marker="o")
+        ax2.set_ylabel("Total penalty")
+
+    plt.title("Roster Feasibility & Utilization")
+    plt.tight_layout()
+    plt.savefig(out_dir / "feasibility_utilization.png", dpi=200)
+    plt.close()
+
+def plot_workload_distribution(frames: "ReportFrames", out_dir: Path) -> None:
+    out_dir.mkdir(parents=True, exist_ok=True)
+
+    duty_hours = frames.workloads["total_minutes"] / 60.0
+    mean = duty_hours.mean()
+    std = duty_hours.std()
+
+    plt.figure()
+    plt.hist(duty_hours, bins=10)
+    plt.axvline(mean, linestyle="--")
+    plt.axvline(mean - std, linestyle=":")
+    plt.axvline(mean + std, linestyle=":")
+
+    plt.title(f"Workload Distribution (Fairness)\nMean: {mean:.2f}h | Std: {std:.2f}h")
+    plt.xlabel("Total duty hours per crew")
+    plt.ylabel("Crew count")
+    plt.tight_layout()
+    plt.savefig(out_dir / "workload_distribution.png", dpi=200)
+    plt.close()
+
+def plot_workload_by_role_boxplot(frames: "ReportFrames", out_dir: Path) -> None:
+    out_dir.mkdir(parents=True, exist_ok=True)
+
+    df = frames.workloads.copy()
+    df["duty_hours"] = df["total_minutes"] / 60.0
+
+    roles = sorted(df["role"].dropna().unique())
+    data = [df.loc[df["role"] == r, "duty_hours"].values for r in roles]
+
+    mean_color = color="#2ca02c"
+    median_color = color="#ff7f0e"
+
+    fig, ax = plt.subplots(figsize=(12,6))
+
+    ax.boxplot(
+        data,
+        vert=False,
+        patch_artist=True,
+        showmeans=True,
+        meanprops=dict(marker="o", markerfacecolor=mean_color, markeredgecolor=mean_color),
+        medianprops=dict(color=median_color, linewidth=2),
+    )
+
+    # ---- Titles & labels (aligned with work_calendar style) ----
+    ax.set_title("Workload Distribution by Role", fontsize=16, fontweight="bold")
+    ax.set_xlabel("Total duty hours per crew", fontsize=12)
+    ax.set_ylabel("Role", fontsize=12)
+    ax.set_yticklabels(roles, fontsize=11)
+    ax.tick_params(axis="x", labelsize=11)
+
+    # ---- Subtle vertical grid only ----
+    ax.xaxis.grid(True, linestyle="--", linewidth=0.6, alpha=0.4)
+    ax.yaxis.grid(False)
+
+    # ---- Remove top/right spines ----
+    ax.spines["top"].set_visible(False)
+    ax.spines["right"].set_visible(False)
+
+    # ---- Legend ----
+    mean_legend = mlines.Line2D([], [], color=mean_color, marker="o", linestyle="None", label="Mean")
+    median_legend = mlines.Line2D([], [], color=median_color, linewidth=2, label="Median")
+
+    ax.legend(
+        handles=[mean_legend, median_legend],
+        fontsize=11,
+        loc="upper left",
+        bbox_to_anchor=(1.02, 1),
+        borderaxespad=0,
+    )
+
+    plt.tight_layout()
+    plt.savefig(out_dir / "workload_by_role_boxplot.png", dpi=200, bbox_inches="tight")
+    plt.close()
 
 def save_plots(frames: ReportFrames, out_dir: Path) -> None:
     out_dir.mkdir(parents=True, exist_ok=True)
 
-    # 1) Work "heatmap" (crew x day) using default matplotlib colormap
-    plt.figure(figsize=(12, 6))
-    plt.imshow(frames.violation_matrix.values, aspect="auto", cmap=cmap, vmin=0, vmax=4)
-    plt.yticks(
-        range(len(frames.violation_matrix.index)),
-        frames.violation_matrix.index,
+    # 1) Work "heatmap" (crew x day)
+    fig, ax = plt.subplots(figsize=(12, 6))
+
+    im = ax.imshow(
+        frames.violation_matrix.values,
+        aspect="auto",
+        cmap=cmap,
+        vmin=0,
+        vmax=4,
     )
-    plt.xticks(
-        range(len(frames.violation_matrix.columns)),
-        frames.violation_matrix.columns,
+
+    # ---- Axes labels & ticks (aligned with boxplot style) ----
+    ax.set_yticks(range(len(frames.violation_matrix.index)))
+    ax.set_yticklabels(frames.violation_matrix.index, fontsize=11)
+
+    ax.set_xticks(range(len(frames.violation_matrix.columns)))
+    ax.set_xticklabels(frames.violation_matrix.columns, fontsize=11)
+
+    ax.set_xlabel("Day", fontsize=12)
+    ax.set_ylabel("Crew", fontsize=12)
+    ax.set_title("Work Calendar with Conflicts", fontsize=16, fontweight="bold")
+
+    # ---- Subtle vertical grid (optional but clean) ----
+    ax.set_xticks(
+        [x - 0.5 for x in range(1, len(frames.violation_matrix.columns))],
+        minor=True,
     )
-    plt.xlabel("Day")
-    plt.ylabel("Crew")
+    ax.grid(which="minor", axis="x", linestyle="--", linewidth=0.5, alpha=0.2)
+    ax.tick_params(which="minor", bottom=False)
+
+    # ---- Remove top/right spines ----
+    ax.spines["top"].set_visible(False)
+    ax.spines["right"].set_visible(False)
+
+    # ---- Legend outside (right side) ----
     legend_patches = [
         mpatches.Patch(color="#f0f0f0", label="Rest"),
         mpatches.Patch(color="#2ca02c", label="Work"),
-        mpatches.Patch(color="#ff7f0e", label="OFF request violated"),
-        mpatches.Patch(color="#9467bd", label="Late → Early violated"),
-        mpatches.Patch(color="#d62728", label="Weekly rest violated"),
+        mpatches.Patch(color="#ff7f0e", label="OFF request conflict"),
+        mpatches.Patch(color="#9467bd", label="Late → Early conflict"),
+        mpatches.Patch(color="#d62728", label="Weekly rest conflict"),
     ]
-    plt.legend(
+
+    ax.legend(
         handles=legend_patches,
-        loc="upper right",
-        bbox_to_anchor=(1.25, 1.0),
+        fontsize=11,
+        loc="upper left",
+        bbox_to_anchor=(1.02, 1),  # move outside right
+        borderaxespad=0,
     )
-    plt.title("Work calendar with violations")
+
     plt.tight_layout()
-    plt.savefig(out_dir / "work_calendar.png", dpi=160)
+    plt.savefig(out_dir / "work_calendar.png", dpi=200, bbox_inches="tight")
     plt.close()
 
     # 2) Workloads bar chart (minutes)
@@ -241,6 +387,9 @@ def save_plots(frames: ReportFrames, out_dir: Path) -> None:
     plt.savefig(out_dir / "workloads.png", dpi=160)
     plt.close()
 
+    plot_feasibility_utilization(frames, out_dir)
+    plot_workload_distribution(frames, out_dir)
+    plot_workload_by_role_boxplot(frames, out_dir)
 
 def save_tables(frames: ReportFrames, out_dir: Path) -> None:
     out_dir.mkdir(parents=True, exist_ok=True)
