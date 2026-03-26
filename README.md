@@ -1,167 +1,34 @@
-# ✈️ Crew Rostering — Decision Under Operational Constraints
+# ✈️ Crew Rostering — Defensible Scheduling Under Operational Constraints
 
-**Workforce planning, fairness trade-offs, and defensible scheduling decisions**
-*Including hard operational constraints, soft preferences, and multi-criteria optimization.*
+Optimization tool for airlines to select a crew roster that explicitly balances coverage, fairness, and fatigue risk.
 
----
+The goal is to produce a single, justifiable roster over a fixed planning horizon — not just any feasible schedule, but the one that best respects competing operational priorities. It enforces hard regulatory rules while surfacing the true trade-offs between workload equity, crew preferences, and fatigue exposure. The weights governing these trade-offs encode management policy and can be tuned per scenario.
 
-## 1. Context & Motivation
+## Problem Overview
+Without structured optimization, crew scheduling risks:
+- Uncovered flights due to eligibility or qualification mismatches
+- Rest and consecutive-day violations that breach regulatory requirements
+- Uneven workload distribution, exposing the airline to fairness grievances
+- Fatigue patterns (late-to-early duty sequences) that increase operational risk
+- Decisions that are opaque and difficult to defend to crew or regulators
 
-Crew rostering decisions are rarely about *finding any feasible schedule*.  
-They are about **choosing an operational roster** that balances:
+## What the Model Does
+- Enforces duty coverage by role (Captain, First Officer, cabin crew) as a hard constraint
+- Respects crew eligibility: base assignment, aircraft qualification, and individual workload limits
+- Prevents duty overlap and guarantees minimum rest between assignments
+- Penalizes fairness imbalance, off-request violations, weekly rest shortfall, and late-to-early fatigue sequences
+- Aggregates all soft trade-offs into a single weighted objective whose weights encode management priorities
+- Supports robustness testing by solving across scenario variants — crew unavailability, duty shifts, preference changes
 
-- coverage feasibility  
-- regulatory and contractual constraints  
-- fairness across crew members  
-- fatigue and quality-of-life considerations  
+## Approaches
+- **Feasibility model** — Confirms whether a legally compliant roster exists for a given instance; serves as a planning baseline
+- **Optimization model** — Finds the best roster under a weighted multi-criteria objective; the primary decision tool
+- **Scenario batch solver** — Runs the optimization across generated variants to quantify how solutions change under disruption
 
-This project studies a **realistic airline crew rostering decision problem under strict operational constraints**, using optimisation to support **transparent, defensible scheduling decisions**.
-
-The goal is not to build a generic scheduling solver, but to answer:
-
-> *“Given limited crew resources and hard operational rules, what roster should we operate — and what trade-offs does it imply?”*
-
----
-
-## 2. Decision Problem
-
-An airline must construct a crew roster over a fixed planning horizon.
-
-The system includes:
-- crew members with roles, bases, and qualifications  
-- flight duties distributed across multiple days  
-- regulatory and operational rules on rest and workload  
-
-The roster determines:
-- who works which duties  
-- how workload is distributed  
-- where fatigue and fairness risks appear  
-
-All hard rules are **strictly enforced**.  
-The decision-maker must choose **one roster**.
-
----
-
-## 3. Operational Policies Considered
-
-Each feasible roster corresponds to an **implicit operational policy**, defined by:
-
-- assignment of crew to duties  
-- distribution of worked days and duty minutes  
-- exposure to fatigue patterns (late → early sequences)  
-
-Different rosters represent different strategic choices, such as:
-- prioritising workload balance  
-- minimising total worked days  
-- protecting rest patterns at the expense of fairness  
-
----
-
-## 4. Modelling & Evaluation Approach
-
-The problem is formulated as a **constraint-based optimisation model**:
-
-- Binary assignment variables  
-- Indicator variables for workload and fatigue patterns  
-- Linear penalties for undesirable but acceptable patterns  
-
-Key characteristics:
-- Hard constraints ensure feasibility  
-- Soft constraints express preferences and risk exposure  
-- A single objective aggregates trade-offs  
-
-Each candidate roster is evaluated on:
-- feasibility  
-- total penalty score  
-- distribution of workload and rest  
-
----
-
-## 5. Decision Variables & Constraints
-
-### Decision Variables
-- Assignment of crew to duties  
-- Daily work indicators  
-- Fatigue and rest pattern indicators  
-
-### Hard Constraints
-- Duty coverage by role  
-- Qualification and base eligibility  
-- Duty overlap prevention  
-- Maximum workload limits  
-- Maximum consecutive work days  
-
-### Soft Constraints (penalised)
-- Workload fairness  
-- Total worked days  
-- Day-off request violations  
-- Weekly rest shortfall  
-- Late → early fatigue patterns  
-
-These constraints define the **decision trade-off space**.
-
----
-
-## 6. Objective Function
-
-The decision criterion is:
-
-```
-Minimise total weighted penalty
-```
-
-Where penalties reflect:
-- fairness imbalance  
-- excessive workload  
-- violation of crew preferences  
-- fatigue risk  
-
-The weights encode **management priorities and risk tolerance**.
-
----
-
-## 7. Decision Insights
-
-Typical questions this model helps answer:
-
-- Where are fairness and feasibility in conflict?  
-- Which crew members carry disproportionate workload?  
-- How do rest rules constrain flexibility?  
-- What is the cost of protecting fatigue-sensitive patterns?  
-
-The value lies in **understanding why a roster looks the way it does**, not just generating it.
-
----
-
-## 8. Decision Recommendation
-
-For a given scenario, the recommended decision is:
-
-> **The feasible roster with the lowest total penalty, respecting all hard operational constraints while balancing fairness and fatigue risk.**
-
-Because all assumptions and penalties are explicit, the recommendation is:
-- transparent  
-- auditable  
-- adjustable to policy changes  
-
----
-
-## 9. Limitations & Extensions
-
-This is a **simplified planning model**.
-
-Not included (yet):
-- pairing or multi-day rotations  
-- reserve crew dynamics  
-- demand uncertainty  
-- real-time recovery  
-
-These extensions would enable richer operational decision support.
-
----
-
-## 10. Takeaway
-
-> **The value of crew rostering lies not in assigning duties, but in making explicit the trade-offs between fairness, feasibility, and fatigue.**
-
-This project demonstrates how optimisation can be used as a **Decision Intelligence tool** to justify workforce scheduling decisions under real-world constraints.
+## Purpose
+This project demonstrates:
+- Constraint programming applied to a realistic workforce planning problem
+- Multi-criteria optimization with explicit, auditable trade-off encoding
+- Separation of hard feasibility from soft preference management
+- Robustness analysis through systematic scenario generation and batch solving
+- Decision-level reporting: objective breakdown, workload distribution, and fatigue exposure per crew member
